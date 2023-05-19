@@ -1,5 +1,7 @@
-# tiny-docker
-项目目标: 实现一个精简版的docker,模仿runC实现容器管理的基本功能
+# Tiny-Docker
+   Tiny Docker是一个使用Golang语言实现的精简版Docker项目，旨在模仿runC实现容器管理的基本功能。该项目采用了CS架构，客户端和服务器使用GRPC框架进行交互。可以实现高效的容器远程管理。
+
+# 工程项目详解
 ```shell
 ├── client                        //客户端
 │   ├── cli_command.go            //客户端调用的功能
