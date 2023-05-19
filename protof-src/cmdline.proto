@@ -1,0 +1,28 @@
+syntax = "proto3";
+package cmdline;
+option go_package = "../grpc/cmdline;cmdline";
+// option go_package = "生成位置;包名";
+
+//用于保存容器的配置设定
+message flag{
+  bool it = 1;
+  string cpu = 2;
+  string mem = 3;
+}
+
+//定义request model
+message Request{
+  flag args = 1;
+  repeated string cmd = 2; //cmd传递具体的命令
+}
+
+//如果tiny-docker run xxx执行成功以后，服务器会返回给用户一个容器的id
+message RunResponse{
+  int32 containerId = 1;
+}
+
+//定义服务主体
+service Service{
+  //启动一个容器
+  rpc RunContainer(Request) returns(RunResponse);
+}

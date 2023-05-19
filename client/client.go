@@ -15,8 +15,10 @@ func main() {
 		run,
 	}
 	app.Before = func(ctx *cli.Context) error {
-		log.SetFormatter(&log.JSONFormatter{})
+		//log.SetFormatter(&log.JSONFormatter{})
+		log.SetLevel(log.DebugLevel)
 		log.SetOutput(os.Stdout)
+		log.SetReportCaller(true)
 		return nil
 	}
 	if err := app.Run(os.Args); err != nil {

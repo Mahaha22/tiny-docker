@@ -1,0 +1,17 @@
+syntax = "proto3";
+package term;
+option go_package = "../grpc/term;term";
+// option go_package = "生成位置;包名";
+//定义request model
+message Request{
+  string input = 1;
+}
+
+message Response{
+  string output = 1;
+}
+//定义服务主体
+service term{
+  //定义方法
+  rpc newterm(stream Request) returns(stream Response);
+}

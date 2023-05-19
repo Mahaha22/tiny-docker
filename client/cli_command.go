@@ -30,12 +30,11 @@ var run = cli.Command{
 		if len(context.Args()) < 1 {
 			return fmt.Errorf("Missing container command %v", len(context.Args()))
 		}
-		//发起启动一个容器请求
-		conn, err := GetConn()
+		//发送run容器指令
+		err := cmd.RunCommand(context)
 		if err != nil {
-			return err
+			return fmt.Errorf("\nrun 容器启动失败: %v", err)
 		}
-		err = cmd.RunCommand(context, conn)
 		return err
 	},
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"net"
-	"tiny-docker/grpc/run"
+	"tiny-docker/grpc/cmdline"
 	"tiny-docker/server/service"
 
 	"google.golang.org/grpc"
@@ -18,7 +18,7 @@ func main() {
 	rpcServer := grpc.NewServer()
 
 	//注册服务
-	run.RegisterRunServiceServer(rpcServer, &service.ContainerService{})
+	cmdline.RegisterServiceServer(rpcServer, &service.ContainerService{})
 
 	//启动服务
 	err = rpcServer.Serve(listener)

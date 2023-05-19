@@ -2,14 +2,14 @@ package service
 
 import (
 	"context"
-	"tiny-docker/grpc/run"
+	"tiny-docker/grpc/cmdline"
 )
 
 type ContainerService struct {
-	run.UnimplementedRunServiceServer
+	cmdline.UnimplementedServiceServer
 }
 
-func (r *ContainerService) RunContainer(ctx context.Context, req *run.RunRequest) (*run.RunResponse, error) {
+func (r *ContainerService) RunContainer(ctx context.Context, req *cmdline.Request) (*cmdline.RunResponse, error) {
 	//实现具体的业务逻辑
 	//启动docker
 	//解析请求
@@ -19,7 +19,7 @@ func (r *ContainerService) RunContainer(ctx context.Context, req *run.RunRequest
 	// }
 	// id, err := InitContainer()
 
-	return &run.RunResponse{
+	return &cmdline.RunResponse{
 		ContainerId: 100,
 	}, nil
 }
