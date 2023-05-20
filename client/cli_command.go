@@ -17,6 +17,10 @@ var run = cli.Command{
 			Usage: `enable tty`,
 		},
 		cli.StringFlag{
+			Name:  "name",
+			Usage: `set container name`,
+		},
+		cli.StringFlag{
 			Name:  "cpu",
 			Usage: `limit the use of cpu`,
 		},
