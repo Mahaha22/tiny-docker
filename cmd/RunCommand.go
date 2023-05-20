@@ -13,12 +13,14 @@ func RunCommand(ctx *cli.Context) error {
 	//解析出设定的配置
 	req := &cmdline.Request{
 		Args: &cmdline.Flag{
-			//It:  ctx.Bool("it"),
-			Cpu: ctx.String("cpu"),
-			Mem: ctx.String("mem"),
+			It:   ctx.Bool("it"),
+			Name: ctx.String("name"),
+			Cpu:  ctx.String("cpu"),
+			Mem:  ctx.String("mem"),
 		},
 		Cmd: ctx.Args(),
 	}
+	fmt.Println(req)
 	/*
 		$ ./tiny-docker run -it -mem 100m cpu 10000 /bin/bash
 		cmd = /bin/bash
@@ -40,10 +42,9 @@ func RunCommand(ctx *cli.Context) error {
 	//fmt.Printf("Create ContainerId \033[32m%v\033[0m Sucessfully\n", response.ContainerId)
 	fmt.Printf("\033[32mCreate ContainerId %v Sucessfully\033[0m\n", response.ContainerId)
 	// 此处判断是否需要交互
-	// if req.Args.It {
-	// 	//拿着服务器返回的id，建立一个双向流grpc，去连指定容器的 nsenter --target 1000 --mount --uts --ipc --net --pid bash
-
-	// }
-
+	if req.Args.It {
+		//拿着服务器返回的id，建立一个双向流grpc，去连指定容器的 nsenter --target 1000 --mount --uts --ipc --net --pid bash
+		newTerm(response.ContainerId)
+	}
 	return nil
 }
