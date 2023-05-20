@@ -8,6 +8,7 @@ message flag{
   bool it = 1;
   string cpu = 2;
   string mem = 3;
+  string name = 4;
 }
 
 //定义request model
@@ -18,7 +19,7 @@ message Request{
 
 //如果tiny-docker run xxx执行成功以后，服务器会返回给用户一个容器的id
 message RunResponse{
-  int32 containerId = 1;
+  string containerId = 1;
 }
 
 //定义服务主体

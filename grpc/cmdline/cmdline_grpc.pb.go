@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ServiceClient interface {
-	// 定义方法
+	// 启动一个容器
 	RunContainer(ctx context.Context, in *Request, opts ...grpc.CallOption) (*RunResponse, error)
 }
 
@@ -47,7 +47,7 @@ func (c *serviceClient) RunContainer(ctx context.Context, in *Request, opts ...g
 // All implementations must embed UnimplementedServiceServer
 // for forward compatibility
 type ServiceServer interface {
-	// 定义方法
+	// 启动一个容器
 	RunContainer(context.Context, *Request) (*RunResponse, error)
 	mustEmbedUnimplementedServiceServer()
 }
