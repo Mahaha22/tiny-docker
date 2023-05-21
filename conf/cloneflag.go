@@ -6,7 +6,7 @@
 我暂时还没有想要精细化的调整这个地方，所以先放着。
 如果你感兴趣可以做如 tiny-docker run --uts --ipc yourdocker 指定隔离某些命名空间
 */
-package namespace
+package conf
 
 import "syscall"
 
