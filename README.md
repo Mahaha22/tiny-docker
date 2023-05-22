@@ -3,30 +3,51 @@
 
 # 工程项目详解
 ```shell
-├── client                        //客户端
-│   ├── cli_command.go            //客户端调用的功能
-│   ├── client.go                 //客户端入口
+.
+├── cgroup                          //Cgroup管理子模块
+│   ├── cgroupManager.go           
+│   ├── cgroup_test.go
+│   ├── cpu.go
+│   ├── memory.go
+│   └── utils.go
+├── client                          //客户端入口
+│   ├── cli_command.go
+│   ├── client.go
 │   └── test
-├── cli.go
-├── cmd                           //命令 例如./tiny-docker create / run / ps 等各种功能的具体实现
-│   └── RunCommand.go             //run的实现
+├── cmd                             //具体命令实现
+│   ├── newTerm.go
+│   └── RunCommand.go
+├── conf                            //配置数据结构
+│   ├── cgroupflag.go
+│   └── cloneflag.go
+├── container                       //容器管理子模块
+│   ├── container.go
+│   ├── container_test.go
+│   └── utils_Container.go
 ├── go.mod
 ├── go.sum
-├── grpc                          //protoc生成的client-server之间信息交互的文件
-│   ├── cmdline                   //普通命令行的格式 例如 ./tiny-docker run -it -cpu 10% -mem 100m bash
-│   │   ├── cmdline_grpc.pb.go
-│   │   └── cmdline.pb.go
-│   ├── conn                      //用于grpc连接的建立
+├── grpc                            //grpc通信数据结构
+│   ├── cmdline                     //命令行数据结构
+│   │   ├── cmdline_grpc.pb.go      
+│   │   └── cmdline.pb.go   
+│   ├── conn                        //cli-sever连接
 │   │   ├── conn.go
 │   │   └── grpc_client.go
-│   └── term                      //用于与容器终端交互的数据格式
+│   └── term                        //远程终端交互数据结构
 │       ├── term_grpc.pb.go
-│       └── term.pb.go
-├── protof-src                    //protobuf文件，生成go-grpc格式
-│   ├── cmdline.proto             //命令行数据的定义
-│   └── term.proto                //终端数据交互的定义
-└── server                        //服务端
-    ├── serve.go                  //服务端入口
-    └── service                   //可供使用的服务
-        └── runContainer.go       //见名知意
+│       └── term.pb.go 
+├── protof-src                      //protobuuf源文件
+│   ├── cmdline.proto
+│   └── term.proto
+├── README.md
+├── server                          //服务器入口
+│   ├── serve.go
+│   └── service                     //具体服务
+│       ├── containerService.go
+│       ├── runContainer.go
+│       └── term
+│           └── newTerm.go
+└── utils                           //项目用到的工具如随机哈希值
+    ├── hash.go
+    └── hash_test.go
 ```
