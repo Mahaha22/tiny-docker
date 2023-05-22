@@ -2,8 +2,10 @@ package container
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"syscall"
+	"tiny-docker/cgroup"
 	"tiny-docker/conf"
 	"tiny-docker/grpc/cmdline"
 	"tiny-docker/utils"
@@ -43,7 +45,7 @@ func (c *Container) Init() error {
 	/*
 		待补充
 	*/
-	cmd := exec.Command("/bin/bash")
+	cmd := exec.Command("sleep", "30000")
 	cmd.SysProcAttr = c.NameSpaceRes                     //独立命名空间配置
 	stdinPipe, _ := cmd.StdinPipe()                      //创建一个连接子进程输入流的管道用于父进程向内传递信息
 	mountinfo := "mount -t proc proc /proc -o private\n" //挂载proc private标志，表示这个挂载点是与其他挂载点相互独立的，不会影响其他挂载点，也不会被其他挂载点所影响。
@@ -53,8 +55,15 @@ func (c *Container) Init() error {
 	}
 	c.RealPid = cmd.Process.Pid
 	//2.容器内的第一个程序已经启动，针对这个容器以他的唯一标识container_id在/sys/fs/cgroup/<subsystem>/tiny-docker/<container_id>创建新的subsystem
-
+	if err := cgroup.SetCgroup(c.ContainerId, &c.CgroupRes, c.RealPid); err != nil {
+		return fmt.Errorf("cgroup资源配置出错 :%v", err)
+	}
 	stdinPipe.Write([]byte(mountinfo))
 	//cmd.Wait()
 	return nil
+}
+func (c *Container) Remove() {
+	process, _ := os.FindProcess(c.RealPid)
+	process.Signal(syscall.Signal(9))
+	fmt.Println(c.RealPid, " is killed")
 }
