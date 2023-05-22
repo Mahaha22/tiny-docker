@@ -12,12 +12,9 @@ import (
 const cpu_name = "cpu"
 
 type CpuSubsystem struct {
-	// Init(path string, res conf.Cgroupflag) error //初始化一个资源子系统
-	// Apply(path string, pid int) error
-	// Delete(path string) error
 }
 
-func (c *CpuSubsystem) Init(container_name string, res conf.Cgroupflag) error {
+func (c *CpuSubsystem) Init(container_name string, res *conf.Cgroupflag) error {
 	//subPath = /sys/fs/cgroup/cpu/tiny-docker/container_name
 	SubPath, err := GetSubPath(container_name, cpu_name)
 	if err != nil {

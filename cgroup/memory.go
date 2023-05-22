@@ -14,7 +14,7 @@ const mem_name = "memory"
 type MemSubsystem struct {
 }
 
-func (m *MemSubsystem) Init(container_name string, res conf.Cgroupflag) error {
+func (m *MemSubsystem) Init(container_name string, res *conf.Cgroupflag) error {
 	//subPath = /sys/fs/cgroup/cpu/tiny-docker/container_name
 	SubPath, err := GetSubPath(container_name, mem_name)
 	if err != nil {
