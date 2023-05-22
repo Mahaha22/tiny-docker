@@ -5,6 +5,8 @@ import (
 	"io"
 	"os/exec"
 	"strconv"
+	"syscall"
+	"tiny-docker/cgroup"
 	"tiny-docker/container"
 	"tiny-docker/grpc/term"
 )
@@ -13,7 +15,10 @@ type TermService struct {
 	term.UnimplementedTermServer
 }
 
+var termExitch chan struct{}
+
 func (t *TermService) Newterm(stream term.Term_NewtermServer) error {
+	termExitch = make(chan struct{}, 1)
 	//fmt.Println("this")
 	defer func() {
 		if err := recover(); err != nil {
@@ -43,6 +48,11 @@ func (t *TermService) Newterm(stream term.Term_NewtermServer) error {
 		go sendProcess(stdoutPipe, stream) //输出流
 		go errProcess(stderrPipe, stream)  //错误流
 		//wg.Wait()
+		//新创建的终端需要加入容器的cgroup以受到资源的限制
+		cgroup.ApplyCgroup(container.ContainerId, cmd.Process.Pid)
+
+		//在终端内部可以通过exit主动退出，但是当客户端意外退出时，也应具备关闭远程终端的能力，避免浪费资源
+		go Killcmd(cmd.Process.Pid, stdinPipe)
 		cmd.Wait()
 		return nil
 
@@ -51,11 +61,17 @@ func (t *TermService) Newterm(stream term.Term_NewtermServer) error {
 	}
 }
 
+func Killcmd(pid int, stdin io.WriteCloser) {
+	<-termExitch
+	syscall.Kill(pid, 9)
+}
 func recvProcess(stdin io.WriteCloser, stream term.Term_NewtermServer) {
 	defer func() {
 		if err := recover(); err != nil {
 			//异常处理,保证服务器不会因为panic而退出
-			fmt.Println("客户端退出")
+			//fmt.Println("客户端退出")
+			//stdin.Write([]byte("exit\n"))
+			termExitch <- struct{}{}
 		}
 	}()
 	for {
@@ -73,7 +89,8 @@ func sendProcess(stdout io.ReadCloser, stream term.Term_NewtermServer) {
 	defer func() {
 		if err := recover(); err != nil {
 			//异常处理,保证服务器不会因为panic而退出
-			fmt.Println("客户端退出")
+			//fmt.Println("客户端退出")
+			termExitch <- struct{}{}
 		}
 	}()
 	for {
@@ -97,7 +114,8 @@ func errProcess(stderr io.ReadCloser, stream term.Term_NewtermServer) {
 	defer func() {
 		if err := recover(); err != nil {
 			//异常处理,保证服务器不会因为panic而退出
-			fmt.Println("客户端退出")
+			//fmt.Println("客户端退出")
+			termExitch <- struct{}{}
 		}
 	}()
 	for {
