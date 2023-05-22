@@ -9,6 +9,8 @@ import (
 	"tiny-docker/conf"
 )
 
+const cpu_name = "cpu"
+
 type CpuSubsystem struct {
 	// Init(path string, res conf.Cgroupflag) error //初始化一个资源子系统
 	// Apply(path string, pid int) error
@@ -17,7 +19,7 @@ type CpuSubsystem struct {
 
 func (c *CpuSubsystem) Init(container_name string, res conf.Cgroupflag) error {
 	//subPath = /sys/fs/cgroup/cpu/tiny-docker/container_name
-	SubPath, err := GetSubPath(container_name, "cpu")
+	SubPath, err := GetSubPath(container_name, cpu_name)
 	if err != nil {
 		return fmt.Errorf("GetSubPath errors : %v", err)
 	}
@@ -32,7 +34,7 @@ func (c *CpuSubsystem) Init(container_name string, res conf.Cgroupflag) error {
 }
 
 func (c *CpuSubsystem) Apply(container_name string, pid int) error {
-	SubPath, err := GetSubPath(container_name, "cpu")
+	SubPath, err := GetSubPath(container_name, cpu_name)
 	if err != nil {
 		return fmt.Errorf("GetSubPath errors : %v", err)
 	}
@@ -42,7 +44,7 @@ func (c *CpuSubsystem) Apply(container_name string, pid int) error {
 	return nil
 }
 func (c *CpuSubsystem) Delete(container_name string) error {
-	SubPath, err := GetSubPath(container_name, "cpu")
+	SubPath, err := GetSubPath(container_name, cpu_name)
 	if err != nil {
 		return fmt.Errorf("GetSubPath errors : %v", err)
 	}
