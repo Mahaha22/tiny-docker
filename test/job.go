@@ -99,8 +99,6 @@ func main() {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	r, w, _ := os.Pipe()
-	cmd.ExtraFiles = []*os.File{r, w}
 	log.Println("fatherProcess,pid = ", os.Getpid())
 	if err := cmd.Start(); err != nil {
 		log.Panicf("failed to run command: %s", err)
