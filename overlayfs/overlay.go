@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
+	"syscall"
 )
 
 const MountPoint = "/mnt/tiny-docker/" //存储挂载点
@@ -39,6 +41,18 @@ func MountOverlay(lowerPath string, containerName string) error {
 	cmd := exec.Command("/bin/bash", "-c", mountinfo)
 	if err := cmd.Run(); err != nil {
 		fmt.Println("mount err = ", err)
+		return err
+	}
+	return nil
+}
+
+func DeleteOverlayMnt(containerName string) error {
+	//容器镜像的挂载点
+	OverlayMntPath := path.Join("/mnt/tiny-docker", containerName)
+	//卸载挂载点
+	syscall.Unmount(OverlayMntPath+"/merge", 0)
+	//删除挂载点文件夹
+	if err := os.RemoveAll(OverlayMntPath); err != nil {
 		return err
 	}
 	return nil
