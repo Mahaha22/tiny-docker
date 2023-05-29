@@ -6,8 +6,8 @@ import (
 	"os/exec"
 )
 
-const MountPoint = "/mnt/tiny-docker/"
-const MountName = "tiny-docker"
+const MountPoint = "/mnt/tiny-docker/" //存储挂载点
+const MountName = "tiny-docker"        //挂载名
 
 // /mnt/tiny-docker/<容器名>/{merge,lower,upper,lower}
 func CreateOverlayFsDirs(containerName string) error {

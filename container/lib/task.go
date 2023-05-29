@@ -4,18 +4,22 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"syscall"
 )
 
 func child() {
 	fmt.Println("[exe]", "pid:", os.Getpid())
-	err := syscall.Sethostname([]byte("mycontainer"))
-	if err != nil {
-		fmt.Println("sethostname err = ", err)
-		return
-	}
-	os.Chdir("/root/busybox")
-	err = syscall.Mount("proc", "proc", "proc", 0, "")
+	//err := syscall.Sethostname([]byte("mycontainer"))
+	// if err != nil {
+	// 	fmt.Println("sethostname err = ", err)
+	// 	return
+	// }
+	//os.Chdir("/root/busybox")
+	overlayfs_path := path.Join("/mnt/tiny-docker", os.Args[1], "merge")
+	fmt.Println("overlaypath = ", overlayfs_path)
+	os.Chdir(overlayfs_path)
+	err := syscall.Mount("proc", "proc", "proc", 0, "")
 	if err != nil {
 		fmt.Println("mount err = ", err)
 		return
@@ -46,7 +50,7 @@ func main() {
 	} else {
 		//父进程用于创建隔离的命名空间
 		fmt.Println("[main]", "pid:", os.Getpid())
-		cmd := exec.Command("/proc/self/exe")
+		cmd := exec.Command("/proc/self/exe", os.Args[1])
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

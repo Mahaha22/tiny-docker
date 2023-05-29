@@ -44,8 +44,9 @@ func (t *TermService) Newterm(stream term.Term_NewtermServer) error {
 
 		// var wg sync.WaitGroup
 		// wg.Add(3)
-		chrootinfo := "chroot /root/busybox /bin/sh\n" //设置容器根目录
-		pathinfo := "export PATH=:/bin\n"              //设置环境变量
+		//chrootinfo := "chroot /root/busybox /bin/sh\n" //设置容器根目录
+		chrootinfo := "chroot /mnt/tiny-docker/" + container.ContainerId + "/merge /bin/sh\n"
+		pathinfo := "export PATH=:/bin\n" //设置环境变量
 		stdinPipe.Write([]byte(chrootinfo))
 		stdinPipe.Write([]byte(pathinfo))
 
