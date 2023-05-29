@@ -1,5 +1,0 @@
-"filename", "language", "Go", "comment", "blank", "total"
-"/root/go/tiny-docker/cgroup/cgroup_test.go", "Go", 11, 0, 1, 12
-"/root/go/tiny-docker/cgroup/cpu.go", "Go", 1, 0, 1, 2
-"/root/go/tiny-docker/cgroup/memory.go", "Go", 46, 0, 6, 52
-"Total", "-", 58, 0, 8, 66
