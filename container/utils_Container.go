@@ -11,7 +11,7 @@ import (
 )
 
 // 用于检测容器是否存活
-func ContainerIsAlive(c *Container) bool {
+func ContainerIsAlive(c *Container) state {
 	statfile := fmt.Sprintf("/proc/%d/stat", c.RealPid)
 	file, _ := os.Open(statfile)
 	scanner := bufio.NewScanner(file)
@@ -21,10 +21,12 @@ func ContainerIsAlive(c *Container) bool {
 		STAT := str[2]
 		fmt.Println("pid = ", c.RealPid, " stat is ", STAT)
 		if STAT == "Z" {
-			return false
+			return EXITDED
+		} else if STAT == "T" {
+			return STOPPED
 		}
 	}
-	return true
+	return RUNNING
 }
 
 // 监视容器的存活状态
@@ -32,11 +34,14 @@ func Monitor() {
 	for {
 		for k, v := range Global_ContainerMap {
 			//fmt.Println("v = ", v, "pid = ", v.RealPid, "alive = ", ContainerIsAlive(v))
-			if !ContainerIsAlive(v) { //如果容器死亡，直接清除
+			S := ContainerIsAlive(v)
+			if S == EXITDED { //如果容器死亡，直接清除
 				delete(Global_ContainerMap, k)
 				//当容器退出时需要对资源进行销毁
 				err := cgroup.DestroyCgroup(k)
 				fmt.Println("monitor err:", err)
+			} else if S == STOPPED {
+				Global_ContainerMap[k].Status = STOPPED //更改一下容器的状态
 			}
 		}
 		//fmt.Println("***", Global_ContainerMap)
