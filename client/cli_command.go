@@ -12,19 +12,23 @@ var run = cli.Command{
 	Name:  "run",
 	Usage: `run a new container`,
 	Flags: []cli.Flag{
-		cli.BoolFlag{
+		cli.BoolFlag{ //进入容器终端
 			Name:  "it",
 			Usage: `enable tty`,
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{ //容器卷挂载
+			Name:  "v",
+			Usage: `mount volume -- vol1 : vol2`,
+		},
+		cli.StringFlag{ //容器名
 			Name:  "name",
 			Usage: `set container name`,
 		},
-		cli.StringFlag{
+		cli.StringFlag{ //cpu用量限制
 			Name:  "cpu",
 			Usage: `limit the use of cpu`,
 		},
-		cli.StringFlag{
+		cli.StringFlag{ //内存用量限制
 			Name:  "mem",
 			Usage: `limit the use of mem`,
 		},

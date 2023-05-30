@@ -29,8 +29,13 @@ func main() {
 	//服务器退出后的清理工作
 	go func() {
 		<-sigChan
-		for _, v := range container.Global_ContainerMap { //1.清除并卸载所有挂载点
-			if err := overlayfs.DeleteOverlayMnt(v.ContainerId); err != nil {
+		for _, c := range container.Global_ContainerMap { //1.清除并卸载所有挂载点
+			//1.1卸载容器卷
+			if err := overlayfs.RemoveMountFs(c.Volmnt, c.ContainerId); err != nil {
+				fmt.Println("RemoveMountFs err = ", err)
+			}
+			//1.2卸载容器根文件系统
+			if err := overlayfs.DeleteOverlayMnt(c.ContainerId); err != nil {
 				fmt.Println("DeleteOverlayMnt err = ", err)
 			}
 		}

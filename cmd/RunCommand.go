@@ -13,14 +13,14 @@ func RunCommand(ctx *cli.Context) error {
 	//解析出设定的配置
 	req := &cmdline.Request{
 		Args: &cmdline.Flag{
-			It:   ctx.Bool("it"),
-			Name: ctx.String("name"),
-			Cpu:  ctx.String("cpu"),
-			Mem:  ctx.String("mem"),
+			It:     ctx.Bool("it"),
+			Name:   ctx.String("name"),
+			Cpu:    ctx.String("cpu"),
+			Mem:    ctx.String("mem"),
+			Volmnt: ctx.StringSlice("v"),
 		},
 		Cmd: ctx.Args(),
 	}
-	fmt.Println(req)
 	/*
 		$ ./tiny-docker run -it -mem 100m cpu 10000 /bin/bash
 		cmd = /bin/bash

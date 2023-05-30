@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"syscall"
 	"tiny-docker/cgroup"
 	"tiny-docker/conf"
@@ -25,20 +26,30 @@ type Container struct {
 	CgroupRes    conf.Cgroupflag      //cgroup资源
 	NameSpaceRes *syscall.SysProcAttr //Namespace隔离标准当作克隆标志
 	RealPid      int                  //容器在主机上真实的进程id
+	Volmnt       map[string]string    //挂载卷映射 [host]->container
 	//NetWork
 }
 
 // 实例化一个容器
 func CreateContainer(req *cmdline.Request) *Container {
-	return &Container{
-		ContainerId: utils.GetUniqueId(),
-		Name:        req.Args.Name,
-		CgroupRes: conf.Cgroupflag{
-			Cpulimit: req.Args.Cpu,
-			Memlimit: req.Args.Mem,
-		},
-		NameSpaceRes: conf.Cloneflag,
+	c := &Container{
+		Volmnt: make(map[string]string),
 	}
+	//解析出卷挂载的参数
+	for _, mntPair := range req.Args.Volmnt {
+		//mntPair = hostdir:containerdir
+		paths := strings.Split(mntPair, ":")
+		c.Volmnt[paths[0]] = paths[1]
+	}
+
+	c.ContainerId = utils.GetUniqueId() //生成容器id
+	c.Name = req.Args.Name              //容器名
+	c.CgroupRes = conf.Cgroupflag{      //容器资源限制
+		Cpulimit: req.Args.Cpu,
+		Memlimit: req.Args.Mem,
+	}
+	c.NameSpaceRes = conf.Cloneflag //容器命名空间隔离
+	return c
 }
 
 // 容器相关配置初始化，例如namesapce和cgroup
@@ -50,8 +61,14 @@ func (c *Container) Init() error {
 		fmt.Println("overlayfs mount err = ", err)
 		return err
 	}
+	//2.挂载容器卷
+	err = overlayfs.MountFS(c.Volmnt, c.ContainerId)
+	if err != nil {
+		fmt.Println("volume mount err = ", err)
+		return err
+	}
 
-	//2.从挂载好的overlay存储中启动容器
+	//3.从挂载好的overlay存储中启动容器
 	os.Chdir("/root/go/tiny-docker/container/lib") //钩子程序的位置
 	cmd := exec.Command("./task", c.ContainerId)   //启动容器的钩子
 	r, w, _ := os.Pipe()                           //用于跟这个钩子程序通信
@@ -67,7 +84,7 @@ func (c *Container) Init() error {
 	pid, _ := strconv.Atoi(string(buf[:n-1])) //钩子程序用于容器的启动，并从管道的另一端返回容器启动的真实pid
 	c.RealPid = pid
 
-	//3.创建cgroup资源
+	//4.创建cgroup资源
 	//容器内的第一个程序已经启动，针对这个容器以他的唯一标识container_id在/sys/fs/cgroup/<subsystem>/tiny-docker/<container_id>创建新的subsystem
 	if err := cgroup.SetCgroup(c.ContainerId, &c.CgroupRes, c.RealPid); err != nil {
 		return fmt.Errorf("cgroup资源配置出错 :%v", err)

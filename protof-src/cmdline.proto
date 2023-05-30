@@ -5,9 +5,11 @@ option go_package = "../grpc/cmdline;cmdline";
 
 //用于保存容器的配置设定
 message flag{
-  string cpu = 1;
-  string mem = 2;
-  string name = 3;
+  bool it = 1;
+  string cpu = 2;
+  string mem = 3;
+  string name = 4;
+  repeated string volmnt = 5; //挂载卷映射
 }
 
 //定义request model
