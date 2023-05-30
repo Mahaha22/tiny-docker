@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 	"tiny-docker/cgroup"
 	"tiny-docker/conf"
 	"tiny-docker/grpc/cmdline"
@@ -19,6 +20,14 @@ func Global_ContainerMap_Init() {
 	Global_ContainerMap = make(map[string]*Container)
 }
 
+type state int //容器的运行状态
+const (
+	RUNNING state = iota
+	STOPPED
+	UNKNOWN
+	EXITDED
+)
+
 // 容器的数据结构
 type Container struct {
 	ContainerId  string               //容器的唯一标识
@@ -27,6 +36,10 @@ type Container struct {
 	NameSpaceRes *syscall.SysProcAttr //Namespace隔离标准当作克隆标志
 	RealPid      int                  //容器在主机上真实的进程id
 	Volmnt       map[string]string    //挂载卷映射 [host]->container
+	CreateTime   string               //创建时间
+	Status       state                //容器的运行状态
+	Image        string               //容器镜像
+	//Ports
 	//NetWork
 }
 
@@ -42,9 +55,12 @@ func CreateContainer(req *cmdline.Request) *Container {
 		c.Volmnt[paths[0]] = paths[1]
 	}
 
-	c.ContainerId = utils.GetUniqueId() //生成容器id
-	c.Name = req.Args.Name              //容器名
-	c.CgroupRes = conf.Cgroupflag{      //容器资源限制
+	c.ContainerId = utils.GetUniqueId()       //生成容器id
+	c.Name = req.Args.Name                    //容器名
+	c.Image = req.Args.ImageId                //容器镜像
+	c.Status = RUNNING                        //容器状态
+	c.CreateTime = time.Now().Format("15:04") //创建时间
+	c.CgroupRes = conf.Cgroupflag{            //容器资源限制
 		Cpulimit: req.Args.Cpu,
 		Memlimit: req.Args.Mem,
 	}
