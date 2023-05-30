@@ -13,6 +13,7 @@ func main() {
 	app.Usage = `a tiny-docker using grpc`
 	app.Commands = []cli.Command{
 		run,
+		ps,
 	}
 	app.Before = func(ctx *cli.Context) error {
 		//log.SetFormatter(&log.JSONFormatter{})
