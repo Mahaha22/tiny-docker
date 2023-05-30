@@ -24,6 +24,8 @@ const _ = grpc.SupportPackageIsVersion7
 type ServiceClient interface {
 	// 启动一个容器
 	RunContainer(ctx context.Context, in *Request, opts ...grpc.CallOption) (*RunResponse, error)
+	// 查询容器状态
+	PsContainer(ctx context.Context, in *Request, opts ...grpc.CallOption) (*ContainerInfo, error)
 }
 
 type serviceClient struct {
@@ -43,12 +45,23 @@ func (c *serviceClient) RunContainer(ctx context.Context, in *Request, opts ...g
 	return out, nil
 }
 
+func (c *serviceClient) PsContainer(ctx context.Context, in *Request, opts ...grpc.CallOption) (*ContainerInfo, error) {
+	out := new(ContainerInfo)
+	err := c.cc.Invoke(ctx, "/cmdline.Service/PsContainer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ServiceServer is the server API for Service service.
 // All implementations must embed UnimplementedServiceServer
 // for forward compatibility
 type ServiceServer interface {
 	// 启动一个容器
 	RunContainer(context.Context, *Request) (*RunResponse, error)
+	// 查询容器状态
+	PsContainer(context.Context, *Request) (*ContainerInfo, error)
 	mustEmbedUnimplementedServiceServer()
 }
 
@@ -58,6 +71,9 @@ type UnimplementedServiceServer struct {
 
 func (UnimplementedServiceServer) RunContainer(context.Context, *Request) (*RunResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunContainer not implemented")
+}
+func (UnimplementedServiceServer) PsContainer(context.Context, *Request) (*ContainerInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PsContainer not implemented")
 }
 func (UnimplementedServiceServer) mustEmbedUnimplementedServiceServer() {}
 
@@ -90,6 +106,24 @@ func _Service_RunContainer_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Service_PsContainer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServiceServer).PsContainer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cmdline.Service/PsContainer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServiceServer).PsContainer(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Service_ServiceDesc is the grpc.ServiceDesc for Service service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -100,6 +134,10 @@ var Service_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RunContainer",
 			Handler:    _Service_RunContainer_Handler,
+		},
+		{
+			MethodName: "PsContainer",
+			Handler:    _Service_PsContainer_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

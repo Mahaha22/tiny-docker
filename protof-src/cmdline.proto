@@ -3,13 +3,26 @@ package cmdline;
 option go_package = "../grpc/cmdline;cmdline";
 // option go_package = "生成位置;包名";
 
+//容器信息
+message container{
+  string container_id = 1;
+  string image = 2;
+  string command = 3;
+  string create_time = 4;
+  repeated string volume_mount = 5;
+  repeated string ports = 6;
+  string name = 7;
+  string status = 8;
+}
+
 //用于保存容器的配置设定
 message flag{
   bool it = 1;
   string cpu = 2;
   string mem = 3;
   string name = 4;
-  repeated string volmnt = 5; //挂载卷映射
+  string image_id = 5;
+  repeated string volmnt = 6; //挂载卷映射
 }
 
 //定义request model
@@ -22,9 +35,14 @@ message Request{
 message RunResponse{
   string containerId = 1;
 }
-
+//tiny-doocker ps执行成功以后，会返回给用户所有正在运行的容器的信息
+message ContainerInfo{
+  repeated container containers = 1;
+}
 //定义服务主体
 service Service{
   //启动一个容器
   rpc RunContainer(Request) returns(RunResponse);
+  //查询容器状态
+  rpc PsContainer(Request) returns(ContainerInfo);
 }
