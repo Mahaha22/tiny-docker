@@ -51,4 +51,6 @@ service Service{
   rpc PsContainer(Request) returns(ContainerInfo);
   //给容器发送指令
   rpc ExecContainer(Request)returns(ContainerStdout);
+  //杀死/清除容器
+  rpc KillContainer(Request)returns(RunResponse);
 }
