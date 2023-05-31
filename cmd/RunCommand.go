@@ -45,7 +45,10 @@ func RunCommand(ctx *cli.Context) error {
 	// 此处判断是否需要交互
 	if req.Args.It {
 		//拿着服务器返回的id，建立一个双向流grpc，去连指定容器的 nsenter --target 1000 --mount --uts --ipc --net --pid bash
-		newTerm(response.ContainerId)
+		err := newTerm(response.ContainerId)
+		if err != nil {
+			return fmt.Errorf("term err = ", err)
+		}
 	}
 	return nil
 }
