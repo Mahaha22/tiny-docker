@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 	"tiny-docker/cgroup"
+	"tiny-docker/overlayfs"
 )
 
 // 用于检测容器是否存活
@@ -51,9 +52,31 @@ func Monitor() {
 
 // 当服务器退出时需清除所有容器信息
 func KillallContainer() {
-	for k, v := range Global_ContainerMap {
-		v.Remove()
-		delete(Global_ContainerMap, k)
-		cgroup.DestroyCgroup(v.ContainerId)
+	for _, v := range Global_ContainerMap {
+		KillContainer(v)
+	}
+}
+
+// 清除容器
+func KillContainer(c *Container) {
+	c.Remove()
+	delete(Global_ContainerMap, c.ContainerId)
+	cgroup.DestroyCgroup(c.ContainerId)
+}
+
+func KillallVolume() {
+	for _, c := range Global_ContainerMap { //1.清除并卸载所有挂载点
+		KillVolume(c)
+	}
+}
+
+func KillVolume(c *Container) {
+	// 1.1卸载容器卷
+	if err := overlayfs.RemoveMountFs(c.Volmnt, c.ContainerId); err != nil {
+		fmt.Println("RemoveMountFs err = ", err)
+	}
+	// 1.2卸载容器根文件系统
+	if err := overlayfs.DeleteOverlayMnt(c.ContainerId); err != nil {
+		fmt.Println("DeleteOverlayMnt err = ", err)
 	}
 }
