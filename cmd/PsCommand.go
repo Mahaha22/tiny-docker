@@ -28,7 +28,7 @@ func PsCommand() error {
 	// 	Name:        "redis",
 	// 	VolumeMount: "/root/vol:/root/vol",
 	// }
-	fmt.Printf("%-15s %-25s %-15s %-10s %-10s %-20s %s\n", "CONTAINER ID", "IMAGE", "CREATED", "STATUS", "PORTS", "VOLUME", "NAMES")
+	fmt.Printf("%-15s %-10s %-15s %-15s %-10s %-10s %-20s %s\n", "CONTAINER ID", "IMAGE", "COMMAND", "CREATED", "STATUS", "PORTS", "VOLUME", "NAMES")
 	ports := "  -   "
 	mnt := "  -   "
 	for _, v := range containerinfo.Containers {
@@ -56,7 +56,7 @@ func PsCommand() error {
 			state = ""
 			state += "STOPPED"
 		}
-		fmt.Printf("%-15s %-25s %-15s %-10s %-10s %-20s %s\n", v.ContainerId, v.Image, v.CreateTime, state, ports, mnt, v.Name)
+		fmt.Printf("%-15s %-10s %-15s %-15s %-10s %-10s %-20s %s\n", v.ContainerId, v.Image, v.Command, v.CreateTime, state, ports, mnt, v.Name)
 	}
 	return nil
 }
