@@ -39,10 +39,16 @@ message RunResponse{
 message ContainerInfo{
   repeated container containers = 1;
 }
+message ContainerStdout{
+  string outinfo = 1;
+  string errinfo = 2;
+}
 //定义服务主体
 service Service{
   //启动一个容器
   rpc RunContainer(Request) returns(RunResponse);
   //查询容器状态
   rpc PsContainer(Request) returns(ContainerInfo);
+  //给容器发送指令
+  rpc ExecContainer(Request)returns(ContainerStdout);
 }
