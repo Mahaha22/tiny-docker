@@ -73,7 +73,7 @@ func CreateContainer(req *cmdline.Request) *Container {
 	for _, cmd := range req.Cmd {
 		c.Command += cmd + " "
 	}
-	c.Command += "\n"
+	//c.Command += "\n"
 	return c
 }
 
