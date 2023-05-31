@@ -15,6 +15,7 @@ func main() {
 		run,  //运行容器
 		ps,   //查看容器状态
 		exec, //向容器发送指令
+		kill, //杀死容器
 	}
 	app.Before = func(ctx *cli.Context) error {
 		//log.SetFormatter(&log.JSONFormatter{})

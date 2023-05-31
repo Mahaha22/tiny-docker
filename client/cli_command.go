@@ -94,3 +94,21 @@ var exec = cli.Command{
 		return err
 	},
 }
+
+// 查看运行中的容器
+var kill = cli.Command{
+	Name:  "kill",
+	Usage: "kill a container",
+	Action: func(context *cli.Context) error {
+		//判断启动一个容器需要的最少参数
+		if len(context.Args()) < 1 {
+			return fmt.Errorf("Missing container command %v", len(context.Args()))
+		}
+		//rpc调用
+		err := cmd.KillCommand(context.Args())
+		if err != nil {
+			return fmt.Errorf("kill container err = ", err)
+		}
+		return nil
+	},
+}
