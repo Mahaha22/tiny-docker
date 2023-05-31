@@ -65,3 +65,32 @@ var ps = cli.Command{
 		return err
 	},
 }
+
+// 查看运行中的容器
+var exec = cli.Command{
+	Name:  "exec",
+	Usage: "send a cmd to container",
+	Flags: []cli.Flag{
+		cli.BoolFlag{
+			Name:  "it",
+			Usage: `enter a container and create new tty`,
+		},
+		// cli.StringFlag{
+		// 	Name:  "id",
+		// 	Usage: `container's id`,
+		// },
+	},
+	Action: func(context *cli.Context) error {
+		//判断启动一个容器需要的最少参数
+		if len(context.Args()) < 2 {
+			return fmt.Errorf("Missing container command %v", len(context.Args()))
+		}
+		//rpc调用
+		err := cmd.ExecCommand(context)
+		if err != nil {
+			fmt.Println("exec fail err = ", err)
+			return err
+		}
+		return err
+	},
+}
