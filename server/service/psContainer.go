@@ -16,7 +16,8 @@ func (r *ContainerService) PsContainer(context.Context, *cmdline.Request) (*cmdl
 			CreateTime:  c.CreateTime,
 			Status:      fmt.Sprintf("%v", c.Status),
 			//Ports:      ,
-			Name: c.Name,
+			Name:    c.Name,
+			Command: c.Command,
 		}
 		for vol1, vol2 := range c.Volmnt {
 			tmp.VolumeMount = append(tmp.VolumeMount, vol1, vol2)
