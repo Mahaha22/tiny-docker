@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -10,7 +9,6 @@ import (
 	"tiny-docker/container"
 	"tiny-docker/grpc/cmdline"
 	"tiny-docker/grpc/term"
-	"tiny-docker/overlayfs"
 	"tiny-docker/server/service"
 	TermSvc "tiny-docker/server/service/term"
 
@@ -29,16 +27,7 @@ func main() {
 	//服务器退出后的清理工作
 	go func() {
 		<-sigChan
-		for _, c := range container.Global_ContainerMap { //1.清除并卸载所有挂载点
-			//1.1卸载容器卷
-			if err := overlayfs.RemoveMountFs(c.Volmnt, c.ContainerId); err != nil {
-				fmt.Println("RemoveMountFs err = ", err)
-			}
-			//1.2卸载容器根文件系统
-			if err := overlayfs.DeleteOverlayMnt(c.ContainerId); err != nil {
-				fmt.Println("DeleteOverlayMnt err = ", err)
-			}
-		}
+		container.KillallVolume()    //2.清除所有容器卷和挂载
 		container.KillallContainer() //2.服务器退出信号时，清除所有容器
 		os.Exit(0)
 	}()
