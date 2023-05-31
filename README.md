@@ -1,6 +1,6 @@
 # Tiny-Docker
-   Tiny Docker是一个使用Golang语言实现的精简版Docker项目，旨在模仿runC实现容器管理的基本功能。该项目采用了CS架构，客户端和服务器使用GRPC框架进行交互。可以实现高效的容器远程管理。
-
+   Tiny Docker是一个使用Golang语言实现的精简版Docker项目，旨在模仿runC实现容器管理的基本功能。该项目采用了CS架构，客户端和服务器使用GRPC框架进行交互。可以实现高效的容器远程管理。  
+   ![结构图](./assets/tiny-docker.png)
 # 工程项目详解
 ```shell
 .
@@ -52,7 +52,7 @@
     └── hash_test.go
 ```
 # 功能实现详解
-## 容器根文件系统挂载实现
+## **1.容器根文件系统挂载实现**
 以下对功能实现的原理做举例说明
 
 1、获得一个redis的完整工作目录
@@ -115,7 +115,7 @@ redis-overlay on /mnt/redis/merge type overlay (rw,relatime,lowerdir=/root/redis
 将`/mnt/redis/merge`作为容器的根文件系统目录`/`，从`/`这里启动容器，既可以做到不影响容器镜像的前提下进行读写
 具体实现见`container`、`overlayfs`包
 
-## 容器卷挂载的实现
+## **2.容器卷挂载的实现**
 容器的根文件系统挂载在`/mnt/redis/merge`,那么在容器启动之前，根文件系统挂载完成以后，我们可以先把需要挂载的卷挂载到指定目录
 例如我们需要把`/root/vol`挂载到容器中的`/root/vol`
 核心实现是直接挂载
@@ -161,3 +161,11 @@ mount: /mnt/redis/merge/root/vol: mount point does not exist.
             │   └── ok.txt
             └── test2
 ```
+## **3.exec执行容器命令实现**
+一个核心的命令就是`nsenter --all -t <pid> <cmd>`  
+举例`nsenter --all -t 12233 ls`即可进入pid为12233的程序的所有命名空间执行ls命令  
+
+***主要流程***  
+1.客户端执行命令`tiny-docker exec <containerId> <cmd>`[cmd/ExecCommand.go]  
+2.向服务器发起`ExecContainer()远程调用`[server/execContainer.go]  
+3.ExecContainer()会根据请求的容器id和需要执行的命令调用`nsenter --all -t <pid> <cmd>`并重定向此程序的`STDOUT、STDERR`并返回给客户端。
