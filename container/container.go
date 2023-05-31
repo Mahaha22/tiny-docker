@@ -39,6 +39,7 @@ type Container struct {
 	CreateTime   string               //创建时间
 	Status       state                //容器的运行状态
 	Image        string               //容器镜像
+	Command      string               //启动命令
 	//Ports
 	//NetWork
 }
@@ -55,8 +56,12 @@ func CreateContainer(req *cmdline.Request) *Container {
 		c.Volmnt[paths[0]] = paths[1]
 	}
 
-	c.ContainerId = utils.GetUniqueId()       //生成容器id
-	c.Name = req.Args.Name                    //容器名
+	c.ContainerId = utils.GetUniqueId() //生成容器id
+	if req.Args.Name == "" {            //容器名
+		c.Name = c.ContainerId
+	} else {
+		c.Name = req.Args.Name
+	}
 	c.Image = req.Args.ImageId                //容器镜像
 	c.Status = RUNNING                        //容器状态
 	c.CreateTime = time.Now().Format("15:04") //创建时间
@@ -65,6 +70,10 @@ func CreateContainer(req *cmdline.Request) *Container {
 		Memlimit: req.Args.Mem,
 	}
 	c.NameSpaceRes = conf.Cloneflag //容器命名空间隔离
+	for _, cmd := range req.Cmd {
+		c.Command += cmd + " "
+	}
+	c.Command += "\n"
 	return c
 }
 
@@ -85,10 +94,10 @@ func (c *Container) Init() error {
 	}
 
 	//3.从挂载好的overlay存储中启动容器
-	os.Chdir("/root/go/tiny-docker/container/lib") //钩子程序的位置
-	cmd := exec.Command("./task", c.ContainerId)   //启动容器的钩子
-	r, w, _ := os.Pipe()                           //用于跟这个钩子程序通信
-	cmd.ExtraFiles = []*os.File{w}                 //将管道的一端传递给钩子
+	os.Chdir("/root/go/tiny-docker/container/lib")          //钩子程序的位置
+	cmd := exec.Command("./task", c.ContainerId, c.Command) //启动容器的钩子+容器名+第一条启动命令
+	r, w, _ := os.Pipe()                                    //用于跟这个钩子程序通信
+	cmd.ExtraFiles = []*os.File{w}                          //将管道的一端传递给钩子
 	if err := cmd.Start(); err != nil {
 		fmt.Println("cmd err = ", err)
 		return err

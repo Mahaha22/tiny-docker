@@ -29,8 +29,8 @@ func child() {
 		fmt.Println("chroot err = ", err)
 		return
 	}
-	cmd := exec.Command("/bin/sh", "-c", "/bin/sleep 3000") //模拟容器中启动一个服务
-	//cmd := exec.Command("/bin/sh")
+	//cmd := exec.Command("/bin/sh", "-c", "/bin/sleep 3000") //模拟容器中启动一个服务
+	cmd := exec.Command("/bin/sh", "-c", os.Args[2])
 	cmd.Env = append(cmd.Env, ":/bin") //添加环境变量
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -50,7 +50,7 @@ func main() {
 	} else {
 		//父进程用于创建隔离的命名空间
 		fmt.Println("[main]", "pid:", os.Getpid())
-		cmd := exec.Command("/proc/self/exe", os.Args[1])
+		cmd := exec.Command("/proc/self/exe", os.Args[1], os.Args[2])
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
