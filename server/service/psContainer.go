@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"tiny-docker/container"
 	"tiny-docker/grpc/cmdline"
+
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func (r *ContainerService) PsContainer(context.Context, *cmdline.Request) (*cmdline.ContainerInfo, error) {
+func (r *ContainerService) PsContainer(context.Context, *emptypb.Empty) (*cmdline.ContainerInfo, error) {
 	info := &cmdline.ContainerInfo{}
 	for _, c := range container.Global_ContainerMap {
 		tmp := &cmdline.Container{
