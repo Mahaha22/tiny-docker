@@ -47,7 +47,7 @@ func RunCommand(ctx *cli.Context) error {
 		//拿着服务器返回的id，建立一个双向流grpc，去连指定容器的 nsenter --target 1000 --mount --uts --ipc --net --pid bash
 		err := newTerm(response.ContainerId)
 		if err != nil {
-			return fmt.Errorf("term err = ", err)
+			return fmt.Errorf("term err = %v", err)
 		}
 	}
 	return nil
