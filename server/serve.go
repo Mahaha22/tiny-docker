@@ -9,6 +9,7 @@ import (
 	"tiny-docker/container"
 	"tiny-docker/grpc/cmdline"
 	"tiny-docker/grpc/term"
+	"tiny-docker/network"
 	"tiny-docker/server/service"
 	TermSvc "tiny-docker/server/service/term"
 
@@ -16,7 +17,8 @@ import (
 )
 
 func init() {
-	container.Global_ContainerMap_Init()
+	container.Global_ContainerMap_Init() //容器map表初始化
+	network.Global_Network_Init()        //网络map表初始化
 	go container.Monitor()
 }
 func main() {
