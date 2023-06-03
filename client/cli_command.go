@@ -95,20 +95,53 @@ var exec = cli.Command{
 	},
 }
 
-// 查看运行中的容器
+// 终结容器
 var kill = cli.Command{
 	Name:  "kill",
 	Usage: "kill a container",
 	Action: func(context *cli.Context) error {
-		//判断启动一个容器需要的最少参数
+		//判断终结一个容器需要的最少参数
 		if len(context.Args()) < 1 {
-			return fmt.Errorf("Missing container command %v", len(context.Args()))
+			return fmt.Errorf("missing container command %v", len(context.Args()))
 		}
 		//rpc调用
 		err := cmd.KillCommand(context.Args())
 		if err != nil {
-			return fmt.Errorf("kill container err = ", err)
+			return fmt.Errorf("kill container err = %v", err)
 		}
 		return nil
+	},
+}
+
+// 管理容器网络
+var network = cli.Command{
+	Name:  "network",
+	Usage: "manage container network",
+	Subcommands: []cli.Command{
+		{
+			Name:  "create",
+			Usage: `new a container`,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "subnet",
+					Usage: `Subnet in CIDR / 192.168.0.0/24`,
+				},
+				cli.StringFlag{
+					Name:  "d",
+					Usage: `network driver`,
+				},
+			},
+			Action: func(context *cli.Context) error {
+				if len(context.Args()) < 1 { //至少有一个参数指定网络的名字
+					return fmt.Errorf("missing network name")
+				}
+				//grpc远程调用创建新的网络
+				err := cmd.CreateNetwork(context)
+				if err != nil {
+					return fmt.Errorf("create new network err = %v", err)
+				}
+				return nil
+			},
+		},
 	},
 }

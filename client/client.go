@@ -12,10 +12,11 @@ func main() {
 	app.Name = "tiny-docker"
 	app.Usage = `a tiny-docker using grpc`
 	app.Commands = []cli.Command{
-		run,  //运行容器
-		ps,   //查看容器状态
-		exec, //向容器发送指令
-		kill, //杀死容器
+		run,     //运行容器
+		ps,      //查看容器状态
+		exec,    //向容器发送指令
+		kill,    //杀死容器
+		network, //管理容器网络
 	}
 	app.Before = func(ctx *cli.Context) error {
 		//log.SetFormatter(&log.JSONFormatter{})
