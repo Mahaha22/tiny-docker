@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"tiny-docker/grpc/cmdline"
 	"tiny-docker/grpc/conn"
 )
 
@@ -13,9 +12,9 @@ func PsCommand() error {
 		return fmt.Errorf("\nclient创建失败 : %v", err)
 	}
 	//ps远程调用
-	containerinfo, err := client.PsContainer(context.Background(), &cmdline.Request{})
+	containerinfo, err := client.PsContainer(context.Background(), nil)
 	if err != nil {
-		fmt.Println("pscontainer err = ", err)
+		fmt.Println("ps container err = ", err)
 		return err
 	}
 	// v := cmdline.Container{
