@@ -15,6 +15,8 @@ type Network struct { //单个新创建的网络信息包含网络名、子网�
 }
 
 func (n *Network) CreateNetwork() error {
+	//这里要做断言
+
 	//1.创建网络驱动
 	return n.Driver.Create(n)
 }
