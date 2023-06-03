@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "google/protobuf/empty.proto";
 package cmdline;
 option go_package = "../grpc/cmdline;cmdline";
 // option go_package = "生成位置;包名";
@@ -35,6 +36,7 @@ message Request{
 message RunResponse{
   string containerId = 1;
 }
+
 //tiny-doocker ps执行成功以后，会返回给用户所有正在运行的容器的信息
 message ContainerInfo{
   repeated container containers = 1;
@@ -43,14 +45,23 @@ message ContainerStdout{
   string outinfo = 1;
   string errinfo = 2;
 }
+
+//向服务器发送network信息
+message Network{
+  string subnet = 1;
+  string driver = 2;
+  string name = 3;
+}
 //定义服务主体
 service Service{
   //启动一个容器
   rpc RunContainer(Request) returns(RunResponse);
   //查询容器状态
-  rpc PsContainer(Request) returns(ContainerInfo);
+  rpc PsContainer(google.protobuf.Empty) returns(ContainerInfo);
   //给容器发送指令
   rpc ExecContainer(Request)returns(ContainerStdout);
   //杀死/清除容器
   rpc KillContainer(Request)returns(RunResponse);
+  //新建一个网络
+  rpc CreateNetwork(Network)returns(google.protobuf.Empty);
 }
