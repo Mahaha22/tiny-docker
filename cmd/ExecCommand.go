@@ -20,7 +20,7 @@ func ExecCommand(ctx *cli.Context) error {
 	if it {
 		err := newTerm(ctx.Args()[0])
 		if err != nil {
-			return fmt.Errorf("term err = ", err)
+			return fmt.Errorf("term err = %v", err)
 		}
 	} else { //2.不需要建立新终端
 		client, err := conn.GrpcClient_Single()
