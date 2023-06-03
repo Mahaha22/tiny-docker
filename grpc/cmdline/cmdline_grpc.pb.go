@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -25,11 +26,13 @@ type ServiceClient interface {
 	// 启动一个容器
 	RunContainer(ctx context.Context, in *Request, opts ...grpc.CallOption) (*RunResponse, error)
 	// 查询容器状态
-	PsContainer(ctx context.Context, in *Request, opts ...grpc.CallOption) (*ContainerInfo, error)
+	PsContainer(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ContainerInfo, error)
 	// 给容器发送指令
 	ExecContainer(ctx context.Context, in *Request, opts ...grpc.CallOption) (*ContainerStdout, error)
 	// 杀死/清除容器
 	KillContainer(ctx context.Context, in *Request, opts ...grpc.CallOption) (*RunResponse, error)
+	// 新建一个网络
+	CreateNetwork(ctx context.Context, in *Network, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type serviceClient struct {
@@ -49,7 +52,7 @@ func (c *serviceClient) RunContainer(ctx context.Context, in *Request, opts ...g
 	return out, nil
 }
 
-func (c *serviceClient) PsContainer(ctx context.Context, in *Request, opts ...grpc.CallOption) (*ContainerInfo, error) {
+func (c *serviceClient) PsContainer(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ContainerInfo, error) {
 	out := new(ContainerInfo)
 	err := c.cc.Invoke(ctx, "/cmdline.Service/PsContainer", in, out, opts...)
 	if err != nil {
@@ -76,6 +79,15 @@ func (c *serviceClient) KillContainer(ctx context.Context, in *Request, opts ...
 	return out, nil
 }
 
+func (c *serviceClient) CreateNetwork(ctx context.Context, in *Network, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/cmdline.Service/CreateNetwork", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ServiceServer is the server API for Service service.
 // All implementations must embed UnimplementedServiceServer
 // for forward compatibility
@@ -83,11 +95,13 @@ type ServiceServer interface {
 	// 启动一个容器
 	RunContainer(context.Context, *Request) (*RunResponse, error)
 	// 查询容器状态
-	PsContainer(context.Context, *Request) (*ContainerInfo, error)
+	PsContainer(context.Context, *emptypb.Empty) (*ContainerInfo, error)
 	// 给容器发送指令
 	ExecContainer(context.Context, *Request) (*ContainerStdout, error)
 	// 杀死/清除容器
 	KillContainer(context.Context, *Request) (*RunResponse, error)
+	// 新建一个网络
+	CreateNetwork(context.Context, *Network) (*emptypb.Empty, error)
 	mustEmbedUnimplementedServiceServer()
 }
 
@@ -98,7 +112,7 @@ type UnimplementedServiceServer struct {
 func (UnimplementedServiceServer) RunContainer(context.Context, *Request) (*RunResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunContainer not implemented")
 }
-func (UnimplementedServiceServer) PsContainer(context.Context, *Request) (*ContainerInfo, error) {
+func (UnimplementedServiceServer) PsContainer(context.Context, *emptypb.Empty) (*ContainerInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PsContainer not implemented")
 }
 func (UnimplementedServiceServer) ExecContainer(context.Context, *Request) (*ContainerStdout, error) {
@@ -106,6 +120,9 @@ func (UnimplementedServiceServer) ExecContainer(context.Context, *Request) (*Con
 }
 func (UnimplementedServiceServer) KillContainer(context.Context, *Request) (*RunResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method KillContainer not implemented")
+}
+func (UnimplementedServiceServer) CreateNetwork(context.Context, *Network) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateNetwork not implemented")
 }
 func (UnimplementedServiceServer) mustEmbedUnimplementedServiceServer() {}
 
@@ -139,7 +156,7 @@ func _Service_RunContainer_Handler(srv interface{}, ctx context.Context, dec fun
 }
 
 func _Service_PsContainer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Request)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -151,7 +168,7 @@ func _Service_PsContainer_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: "/cmdline.Service/PsContainer",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).PsContainer(ctx, req.(*Request))
+		return srv.(ServiceServer).PsContainer(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -192,6 +209,24 @@ func _Service_KillContainer_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Service_CreateNetwork_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Network)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServiceServer).CreateNetwork(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cmdline.Service/CreateNetwork",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServiceServer).CreateNetwork(ctx, req.(*Network))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Service_ServiceDesc is the grpc.ServiceDesc for Service service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -214,6 +249,10 @@ var Service_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "KillContainer",
 			Handler:    _Service_KillContainer_Handler,
+		},
+		{
+			MethodName: "CreateNetwork",
+			Handler:    _Service_CreateNetwork_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
