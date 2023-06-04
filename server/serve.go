@@ -29,8 +29,9 @@ func main() {
 	//服务器退出后的清理工作
 	go func() {
 		<-sigChan
-		container.KillallVolume()    //2.清除所有容器卷和挂载
+		container.KillallVolume()    //1.清除所有容器卷和挂载
 		container.KillallContainer() //2.服务器退出信号时，清除所有容器
+		network.RemoveAllNetwork()   //3.删除所有网络配置
 		os.Exit(0)
 	}()
 
