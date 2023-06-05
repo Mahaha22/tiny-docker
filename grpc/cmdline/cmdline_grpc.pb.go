@@ -33,6 +33,10 @@ type ServiceClient interface {
 	KillContainer(ctx context.Context, in *Request, opts ...grpc.CallOption) (*RunResponse, error)
 	// 新建一个网络
 	CreateNetwork(ctx context.Context, in *Network, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 列出所有网络
+	ListNetwork(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Networks, error)
+	// 删除网络
+	DelNetwork(ctx context.Context, in *Network, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type serviceClient struct {
@@ -88,6 +92,24 @@ func (c *serviceClient) CreateNetwork(ctx context.Context, in *Network, opts ...
 	return out, nil
 }
 
+func (c *serviceClient) ListNetwork(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Networks, error) {
+	out := new(Networks)
+	err := c.cc.Invoke(ctx, "/cmdline.Service/ListNetwork", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) DelNetwork(ctx context.Context, in *Network, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/cmdline.Service/DelNetwork", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ServiceServer is the server API for Service service.
 // All implementations must embed UnimplementedServiceServer
 // for forward compatibility
@@ -102,6 +124,10 @@ type ServiceServer interface {
 	KillContainer(context.Context, *Request) (*RunResponse, error)
 	// 新建一个网络
 	CreateNetwork(context.Context, *Network) (*emptypb.Empty, error)
+	// 列出所有网络
+	ListNetwork(context.Context, *emptypb.Empty) (*Networks, error)
+	// 删除网络
+	DelNetwork(context.Context, *Network) (*emptypb.Empty, error)
 	mustEmbedUnimplementedServiceServer()
 }
 
@@ -123,6 +149,12 @@ func (UnimplementedServiceServer) KillContainer(context.Context, *Request) (*Run
 }
 func (UnimplementedServiceServer) CreateNetwork(context.Context, *Network) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateNetwork not implemented")
+}
+func (UnimplementedServiceServer) ListNetwork(context.Context, *emptypb.Empty) (*Networks, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListNetwork not implemented")
+}
+func (UnimplementedServiceServer) DelNetwork(context.Context, *Network) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DelNetwork not implemented")
 }
 func (UnimplementedServiceServer) mustEmbedUnimplementedServiceServer() {}
 
@@ -227,6 +259,42 @@ func _Service_CreateNetwork_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Service_ListNetwork_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServiceServer).ListNetwork(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cmdline.Service/ListNetwork",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServiceServer).ListNetwork(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Service_DelNetwork_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Network)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServiceServer).DelNetwork(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cmdline.Service/DelNetwork",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServiceServer).DelNetwork(ctx, req.(*Network))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Service_ServiceDesc is the grpc.ServiceDesc for Service service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -253,6 +321,14 @@ var Service_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateNetwork",
 			Handler:    _Service_CreateNetwork_Handler,
+		},
+		{
+			MethodName: "ListNetwork",
+			Handler:    _Service_ListNetwork_Handler,
+		},
+		{
+			MethodName: "DelNetwork",
+			Handler:    _Service_DelNetwork_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

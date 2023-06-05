@@ -117,6 +117,10 @@ var kill = cli.Command{
 var network = cli.Command{
 	Name:  "network",
 	Usage: "manage container network",
+	//network下包含多个子命令
+	//create 创建网络
+	//ls     显示所有网络
+	//delete 删除网络
 	Subcommands: []cli.Command{
 		{
 			Name:  "create",
@@ -141,6 +145,24 @@ var network = cli.Command{
 					return fmt.Errorf("create new network err = %v", err)
 				}
 				return nil
+			},
+		},
+		{
+			Name:  "ls",
+			Usage: `show all network`,
+			Action: func(context *cli.Context) error {
+				//触发grpc远程调用
+				return cmd.ListNetwork()
+			},
+		},
+		{
+			Name:  "delete",
+			Usage: `delete network config`,
+			Action: func(context *cli.Context) error {
+				if len(context.Args()) < 1 {
+					return fmt.Errorf("need network's name")
+				}
+				return cmd.DeleteNetwork(context.Args())
 			},
 		},
 	},

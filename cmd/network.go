@@ -13,11 +13,14 @@ import (
 
 // 创建网络
 func CreateNetwork(ctx *cli.Context) error {
-	subnet := ctx.String("subnet")                      //解析出cidr地址
-	if _, _, err := net.ParseCIDR(subnet); err != nil { //判断cidr是否有效
-		return fmt.Errorf("subnet format is err = %v", err)
-	}
 	driver := ctx.String("d")
+	var subnet string
+	if driver == "" || driver == "bridge" { //如果使用bridge驱动需要给出subnet地址
+		subnet = ctx.String("subnet")                       //解析出cidr地址
+		if _, _, err := net.ParseCIDR(subnet); err != nil { //判断cidr是否有效
+			return fmt.Errorf("subnet format is err = %v", err)
+		}
+	}
 	name := ctx.Args()[0]
 	req := cmdline.Network{
 		Subnet: subnet,
@@ -53,4 +56,17 @@ func ListNetwork() error {
 	return nil
 }
 
-//删除网络
+// 删除网络
+func DeleteNetwork(args []string) error {
+	client, err := conn.GrpcClient_Single()
+	if err != nil {
+		return err //创建grpc客户端出现问题，直接返回
+	}
+	for _, nw_name := range args {
+		_, err = client.DelNetwork(context.Background(), &cmdline.Network{Name: nw_name})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
