@@ -1,58 +1,37 @@
 # Tiny-Docker
    Tiny Docker是一个使用Golang语言实现的精简版Docker项目，旨在模仿runC实现容器管理的基本功能。该项目采用了CS架构，客户端和服务器使用GRPC框架进行交互。可以实现高效的容器远程管理。  
    ![结构图](./assets/tiny-docker.png)
-# 工程项目详解
-```shell
-.
-├── cgroup                          //Cgroup管理子模块
-│   ├── cgroupManager.go           
-│   ├── cgroup_test.go
-│   ├── cpu.go
-│   ├── memory.go
-│   └── utils.go
-├── client                          //客户端入口
-│   ├── cli_command.go
-│   ├── client.go
-│   └── test
-├── cmd                             //具体命令实现
-│   ├── newTerm.go
-│   └── RunCommand.go
-├── conf                            //配置数据结构
-│   ├── cgroupflag.go
-│   └── cloneflag.go
-├── container                       //容器管理子模块
-│   ├── container.go
-│   ├── container_test.go
-│   └── utils_Container.go
-├── go.mod
-├── go.sum
-├── grpc                            //grpc通信数据结构
-│   ├── cmdline                     //命令行数据结构
-│   │   ├── cmdline_grpc.pb.go      
-│   │   └── cmdline.pb.go   
-│   ├── conn                        //cli-sever连接
-│   │   ├── conn.go
-│   │   └── grpc_client.go
-│   └── term                        //远程终端交互数据结构
-│       ├── term_grpc.pb.go
-│       └── term.pb.go 
-├── protof-src                      //protobuuf源文件
-│   ├── cmdline.proto
-│   └── term.proto
-├── README.md
-├── server                          //服务器入口
-│   ├── serve.go
-│   └── service                     //具体服务
-│       ├── containerService.go
-│       ├── runContainer.go
-│       └── term
-│           └── newTerm.go
-└── utils                           //项目用到的工具如随机哈希值
-    ├── hash.go
-    └── hash_test.go
-```
-# 功能实现详解
+
+# 核心功能实现简要讲解
+## 容器
+- [启动容器](#启动容器) 
+    - [xxx](#xxx)
+    - [xxx](#xxx)
+- [进入容器](#进入容器) 
+    - [xxx](#xxx)
+    - [xxx](#xxx)
+- [执行容器命令](#执行容器命令)
+    - [xxx](#xxx)
+    - [xxx](#xxx)
+- [查看运行中的容器](#查看运行中的容器)
+    - [xxx](#xxx)
+    - [xxx](#xxx)
+- [删除容器](#删除容器)
+    - [xxx](#xxx)
+## 资源限制
+- [cpu资源限制](#cpu资源限制)
+- [memory资源限制](#mem资源限制)
+## 容器卷挂载
+- [aufs文件系统](#aufs)
+- [overlay文件系统](#overlay)
+## 网络配置
+- [网络配置基本原理](#网络配置基本原理)
+- [网络管理](#创建网络)
+  - [create](#nw_create)
+  - [list](#nw_list)
+  - [delete](#nw_delete)
 ## **1.容器根文件系统挂载实现**
+<a id="section1"></a>
 以下对功能实现的原理做举例说明
 
 1、获得一个redis的完整工作目录
