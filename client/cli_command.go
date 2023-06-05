@@ -66,7 +66,7 @@ var ps = cli.Command{
 	},
 }
 
-// 查看运行中的容器
+// 给容器发送命令
 var exec = cli.Command{
 	Name:  "exec",
 	Usage: "send a cmd to container",
