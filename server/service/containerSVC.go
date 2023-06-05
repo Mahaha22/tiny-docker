@@ -7,7 +7,43 @@ import (
 	"strconv"
 	"tiny-docker/container"
 	"tiny-docker/grpc/cmdline"
+
+	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+func (r *ContainerService) RunContainer(ctx context.Context, req *cmdline.Request) (*cmdline.RunResponse, error) {
+	//实现具体的业务逻辑
+	newContainer := container.CreateContainer(req) //实例化一个容器
+	if err := newContainer.Init(); err != nil {    //初始化容器
+		return &cmdline.RunResponse{
+			ContainerId: "", //容器创建失败返回空
+		}, err
+	}
+	container.Global_ContainerMap[newContainer.ContainerId] = newContainer //放入Global_ContainerMap
+	return &cmdline.RunResponse{
+		ContainerId: newContainer.ContainerId, //容器创建成功返回真实的容器id
+	}, nil
+}
+
+func (r *ContainerService) PsContainer(context.Context, *emptypb.Empty) (*cmdline.ContainerInfo, error) {
+	info := &cmdline.ContainerInfo{}
+	for _, c := range container.Global_ContainerMap {
+		tmp := &cmdline.Container{
+			ContainerId: c.ContainerId,
+			Image:       c.Image,
+			CreateTime:  c.CreateTime,
+			Status:      fmt.Sprintf("%v", c.Status),
+			//Ports:      ,
+			Name:    c.Name,
+			Command: c.Command,
+		}
+		for vol1, vol2 := range c.Volmnt {
+			tmp.VolumeMount = append(tmp.VolumeMount, vol1, vol2)
+		}
+		info.Containers = append(info.Containers, tmp)
+	}
+	return info, nil
+}
 
 func (r *ContainerService) ExecContainer(ctx context.Context, req *cmdline.Request) (*cmdline.ContainerStdout, error) {
 	containerid := req.Cmd[0]
@@ -62,4 +98,15 @@ func (r *ContainerService) ExecContainer(ctx context.Context, req *cmdline.Reque
 	} else {
 		return nil, fmt.Errorf("container %v is not existed", containerid)
 	}
+}
+
+func (r *ContainerService) KillContainer(ctx context.Context, req *cmdline.Request) (*cmdline.RunResponse, error) {
+	for _, v := range req.Cmd {
+		if c, ok := container.Global_ContainerMap[v]; ok { //容器存在
+			container.KillVolume(c)
+			container.KillContainer(c)
+			return &cmdline.RunResponse{}, nil
+		}
+	}
+	return &cmdline.RunResponse{}, nil
 }

@@ -25,3 +25,29 @@ func (r *ContainerService) CreateNetwork(ctx context.Context, req *cmdline.Netwo
 	}
 	return &emptypb.Empty{}, nil
 }
+
+func (r *ContainerService) ListNetwork(context.Context, *emptypb.Empty) (*cmdline.Networks, error) {
+	res := &cmdline.Networks{}
+	for _, nw := range network.Global_Network {
+		res.Nws = append(res.Nws, &cmdline.Network{
+			Name:   nw.Name,
+			Subnet: nw.Subnet.String(),
+			Driver: GetDriverStr(nw.Driver),
+		})
+	}
+	return res, nil
+}
+
+func GetDriverStr(driver network.Driver) string {
+	//类型推断
+	switch driver.(type) {
+	case *network.BridgeDriver: //bridge
+		{
+			return "bridge"
+		}
+		//host
+		//none
+		//overlay
+	}
+	return ""
+}
