@@ -14,7 +14,7 @@ type BridgeDriver struct {
 	Name     string `json:"name"`     //名字
 	Ip       net.IP `json:"ip"`       //ip地址
 	Brd      net.IP `json:"brd"`      //广播地址
-	iptables string `json:"iptables"` //保存iptables信息，用于退出时清理
+	Iptables string `json:"iptables"` //保存iptables信息，用于退出时清理
 }
 
 func (b *BridgeDriver) Create(nw *Network) error {
@@ -59,7 +59,7 @@ func (b *BridgeDriver) Create(nw *Network) error {
 	if err := cmd.Run(); err != nil {
 		return err
 	}
-	b.iptables = fmt.Sprintf("sudo iptables -t nat -D POSTROUTING -s %v/%v -j MASQUERADE", nw.Subnet.IP.String(), size)
+	b.Iptables = fmt.Sprintf("sudo iptables -t nat -D POSTROUTING -s %v/%v -j MASQUERADE", nw.Subnet.IP.String(), size)
 	return nil
 }
 
@@ -76,7 +76,7 @@ func (b *BridgeDriver) Remove() error {
 		return err
 	}
 	//3.清理iptables
-	cmd = exec.Command("/bin/bash", "-c", b.iptables)
+	cmd = exec.Command("/bin/bash", "-c", b.Iptables)
 	if err := cmd.Run(); err != nil {
 		return err
 	}

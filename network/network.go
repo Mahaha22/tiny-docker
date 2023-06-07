@@ -40,7 +40,7 @@ type Network struct { //单个新创建的网络信息包含网络名、子网�
 	Subnet  *net.IPNet        `json:"subnet"`  //子网
 	Ipalloc *IPAlloc          `json:"ipalloc"` //网络划分
 	Driver  Driver            `json:"driver"`  //网络驱动
-	Port    map[string]string `json:"driver"`  //port映射
+	Port    map[string]string `json:"port"`    //port映射
 }
 
 func (n *Network) CreateNetwork() error {
