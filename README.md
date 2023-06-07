@@ -24,16 +24,29 @@
 ## 容器卷挂载
 - [aufs文件系统](#aufs)
 - [overlay文件系统](#overlay)
-## 网络配置
-- [网络配置基本原理](#网络配置基本原理)
+## 四、网络配置
+- [1、网络配置基本原理](#网络配置基本原理)
   - [bridge](#bridge)
-- [网络管理](#创建网络)
+- [2、网络管理](#创建网络)
   - [create](#nw_create)
   - [list](#nw_list)
   - [delete](#nw_delete)
 
-## 网络配置 <a id="网络配置基本原理"></a>
+## 四、网络配置 
+### 1、网络配置基本原理 <a id="网络配置基本原理"></a>
 ### bridge网络<a id="bridge"></a> 
+  ![bridge](./assets/bridge.png)  
+  上图是bridge网络的核心结构。虚拟网卡对veth一端接收数据会从另一端流出。对于主机网络和n1、n2，三者之间是隔离的，因此借助虚拟网卡的特性才能进行数据交互。并且不同命名空间的网络也不在同一个网段下。也需要借助路由转发技术实现不同网段的数据交互，此时主机可以看作是一个路由器。需要在主机上打开路由转发功能。  
+  临时生效  
+```sh 
+$ echo "1" > /proc/sys/net/ipv4/ip_forward 
+```
+
+永久生效,修改 /etc/sysctl.conf：
+```sh 
+$ net.ipv4.ip_forward = 1
+```
+以下对整个bridge网络进行一个实操,完成整个实验会对bridge网络有个深刻的理解
 ```shell
 $ #新建网络命名空间n1、n2 和网桥 br0
 $ ip netns add n1 
