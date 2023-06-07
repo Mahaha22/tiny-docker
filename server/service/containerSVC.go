@@ -13,8 +13,11 @@ import (
 
 func (r *ContainerService) RunContainer(ctx context.Context, req *cmdline.Request) (*cmdline.RunResponse, error) {
 	//实现具体的业务逻辑
-	newContainer := container.CreateContainer(req) //实例化一个容器
-	if err := newContainer.Init(); err != nil {    //初始化容器
+	newContainer, err := container.CreateContainer(req) //实例化一个容器
+	if err != nil {
+		return &cmdline.RunResponse{}, err //容器配置有误
+	}
+	if err := newContainer.Init(); err != nil { //初始化容器
 		return &cmdline.RunResponse{
 			ContainerId: "", //容器创建失败返回空
 		}, err
