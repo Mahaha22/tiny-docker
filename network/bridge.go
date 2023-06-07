@@ -11,13 +11,18 @@ import (
 
 type BridgeDriver struct {
 	//Dtype DriverType `json:"dtype"` //驱动类型
-	Name string `json:"name"` //名字
-	Ip   net.IP `json:"ip"`   //ip地址
-	Brd  net.IP `json:"brd"`  //广播地址
+	Name     string `json:"name"`     //名字
+	Ip       net.IP `json:"ip"`       //ip地址
+	Brd      net.IP `json:"brd"`      //广播地址
+	iptables string `json:"iptables"` //保存iptables信息，用于退出时清理
 }
 
 func (b *BridgeDriver) Create(nw *Network) error {
-	b.Name = "td-" + utils.GetUniqueId()
+	if nw.Name != "" {
+		b.Name = nw.Name
+	} else {
+		b.Name = "td-" + utils.GetUniqueId()
+	}
 	//1.添加网桥驱动
 	cmd := exec.Command("brctl", "addbr", b.Name)
 	if err := cmd.Run(); err != nil {
@@ -48,6 +53,13 @@ func (b *BridgeDriver) Create(nw *Network) error {
 	if err := cmd.Run(); err != nil {
 		return err
 	}
+	//4.设置iptables nat表POSTROUTING
+	args = fmt.Sprintf("sudo iptables -t nat -A POSTROUTING -s %v/%v -j MASQUERADE", nw.Subnet.IP.String(), size)
+	cmd = exec.Command("/bin/bash", "-c", args)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	b.iptables = fmt.Sprintf("sudo iptables -t nat -D POSTROUTING -s %v/%v -j MASQUERADE", nw.Subnet.IP.String(), size)
 	return nil
 }
 
@@ -63,5 +75,82 @@ func (b *BridgeDriver) Remove() error {
 	if err := cmd.Run(); err != nil {
 		return err
 	}
+	//3.清理iptables
+	cmd = exec.Command("/bin/bash", "-c", b.iptables)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
 	return nil
+}
+
+func SetBridgeNetwork(pid int, nw *Network) (net.IP, error) {
+	//1.创建虚拟网卡对
+	ip, ok := nw.Ipalloc.Allocate() //容器的ip地址
+	if !ok {
+		return nil, fmt.Errorf("ip allocate fail")
+	}
+	veth_br := "br" + utils.GetUniqueId() //放在网桥的一端
+	veth_c := "c" + utils.GetUniqueId()   //放在容器内部的一端
+
+	//1.新建网卡对
+	args := fmt.Sprintf("ip link add %s type veth peer name %s", veth_br, veth_c)
+	fmt.Println(args)
+	cmd := exec.Command("/bin/bash", "-c", args)
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	//2.将veth_c放入容器
+	args = fmt.Sprintf("ip link set %s netns %v", veth_c, pid)
+	fmt.Println(args)
+	cmd = exec.Command("/bin/bash", "-c", args)
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	//3.将veth_br放入网桥
+	br, _ := nw.Driver.(*BridgeDriver)
+	args = fmt.Sprintf("ip link set %s master %s", veth_br, br.Name)
+	fmt.Println(args)
+	cmd = exec.Command("/bin/bash", "-c", args)
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	//4.给放入容器的网卡设置ip
+	size, _ := nw.Subnet.Mask.Size()
+	args = fmt.Sprintf("nsenter -n -t %v ip addr add %s/%d brd + dev %s", pid, ip, size, veth_c)
+	fmt.Println(args)
+	cmd = exec.Command("/bin/bash", "-c", args)
+	if err := cmd.Run(); err != nil {
+		fmt.Println("4 err  = ", err)
+		return nil, err
+	}
+
+	//5.将veth_br启动
+	args = fmt.Sprintf("ip link set dev %s up", veth_br)
+	fmt.Println(args)
+	cmd = exec.Command("/bin/bash", "-c", args)
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	//6.将veth_c启动
+	args = fmt.Sprintf("nsenter -n -t %v ip link set dev %s up", pid, veth_c)
+	fmt.Println(args)
+	cmd = exec.Command("/bin/bash", "-c", args)
+	if err := cmd.Run(); err != nil {
+		fmt.Println("6 err = ", err)
+		return nil, err
+	}
+	//7.进入容器内部设置默认路由
+	b, _ := nw.Driver.(*BridgeDriver)
+	gateway := b.Ip
+	args = fmt.Sprintf("nsenter -n -t %v ip route add default via %v dev %v", pid, gateway, veth_c)
+	fmt.Println(args)
+	cmd = exec.Command("/bin/bash", "-c", args)
+	if err := cmd.Run(); err != nil {
+		fmt.Println("6 err = ", err)
+		return nil, err
+	}
+	//8.设置iptables nat表POSTROUTING
+
+	//9.设置iptables nat表PREROUTING
+	return ip, nil
 }
