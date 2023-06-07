@@ -16,11 +16,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-func init() {
-	container.Global_ContainerMap_Init() //容器map表初始化
-	network.Global_Network_Init()        //网络map表初始化
-	go container.Monitor()
-}
 func main() {
 	//1.前置处理
 	//注册一些信号，可以让程序优雅的停止
