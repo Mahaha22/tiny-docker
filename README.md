@@ -26,10 +26,77 @@
 - [overlay文件系统](#overlay)
 ## 网络配置
 - [网络配置基本原理](#网络配置基本原理)
+  - [bridge](#bridge)
 - [网络管理](#创建网络)
   - [create](#nw_create)
   - [list](#nw_list)
   - [delete](#nw_delete)
+
+## 网络配置 <a id="网络配置基本原理"></a>
+### bridge网络<a id="bridge"></a> 
+```shell
+$ #新建网络命名空间n1、n2 和网桥 br0
+$ ip netns add n1 
+$ ip netns add n2 
+$ brctl addbr br0
+$ #新建两对虚拟网卡
+$ ip link add veth1_br type veth peer name veth1_c
+$ ip link add veth2_br type veth peer name veth2_c
+$ #将网卡的一端放入网络命名空间n1、n2
+$ ip link set veth1_c netns n1     
+$ ip link set veth2_c netns n2  
+$ #将网卡的一端放入网桥br0
+$ ip link set veth1_br master br0
+$ ip link set veth2_br master br0
+$ #给网桥设置ip地址和广播地址，并启动up
+$ ip addr add 192.168.0.1/16 brd + dev br0 
+$ ip link set br0 up
+$ ip netns exec n1 ip addr add 192.168.0.2/16 dev veth1_c
+$ #给放入命名空间n1、n2的网卡设置ip地址，并启动up
+$ ip netns exec n1 ip addr add 192.168.0.2/16 dev veth1_c
+$ ip netns exec n1 ip link set veth1_c up
+$ ip netns exec n2 ip addr add 192.168.0.3/16 dev veth2_c
+$ ip netns exec n2 ip link set veth2_c up
+$ #启动虚拟网卡的另一端
+$ ip link set veth1_br up
+$ ip link set veth2_br up
+
+$ #以上设置完成以后，在192.168.0.0/16这个网段中的 n1 n2 br0都是可以互相通信的
+$ ip netns exec n1 ping -c 1 192.168.0.3
+PING 192.168.0.3 (192.168.0.3) 56(84) bytes of data.
+64 bytes from 192.168.0.3: icmp_seq=1 ttl=64 time=0.185 ms
+
+--- 192.168.0.3 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.185/0.185/0.185/0.000 ms
+$ ip netns exec n2 ping -c 1 192.168.0.2
+PING 192.168.0.2 (192.168.0.2) 56(84) bytes of data.
+64 bytes from 192.168.0.2: icmp_seq=1 ttl=64 time=0.081 ms
+
+--- 192.168.0.2 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.081/0.081/0.081/0.000 ms
+```
+> 注意，此时n1、n2网络命名空间是不可以上外网，外网也无法访问n1、n2;  
+> 需要访问外网和提供服务需要配置路由表和iptables流量转发  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## **1.容器根文件系统挂载实现**
 <a id="section1"></a>
 以下对功能实现的原理做举例说明
