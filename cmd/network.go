@@ -49,9 +49,9 @@ func ListNetwork() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%-20s %-10s %s\n", "Subnet", "Name", "Driver")
+	fmt.Printf("%-15s %-15s %s\n", "Subnet", "Name", "Driver")
 	for _, nw := range networks.Nws {
-		fmt.Printf("%-20s %-10s %s\n", nw.Subnet, nw.Name, nw.Driver)
+		fmt.Printf("%-15s %-15s %s\n", nw.Subnet, nw.Name, nw.Driver)
 	}
 	return nil
 }
