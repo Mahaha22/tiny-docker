@@ -20,10 +20,10 @@ func NewDriver(Dtype string) Driver {
 		return &BridgeDriver{}
 	// case "overlay":
 	// 	nw.Driver.Dtype = network.Overlay
-	// case "none":
-	// 	nw.Driver.Dtype = network.None
-	// case "host":
-	// 	nw.Driver.Dtype = network.Host
+	case "none":
+		return &NoneDriver{}
+	case "host":
+		return &HostDriver{}
 	default:
 		return &BridgeDriver{} //bridge作为默认驱动
 	}
