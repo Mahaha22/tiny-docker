@@ -7,6 +7,7 @@ import (
 	"tiny-docker/grpc/conn"
 
 	"github.com/urfave/cli"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func RunCommand(ctx *cli.Context) error {
@@ -15,10 +16,12 @@ func RunCommand(ctx *cli.Context) error {
 		Args: &cmdline.Flag{
 			It:      ctx.Bool("it"),
 			ImageId: ctx.String("i"),
+			Net:     ctx.String("net"),
 			Name:    ctx.String("name"),
 			Cpu:     ctx.String("cpu"),
 			Mem:     ctx.String("mem"),
 			Volmnt:  ctx.StringSlice("v"),
+			Ports:   ctx.StringSlice("p"),
 		},
 		Cmd: ctx.Args(),
 	}
@@ -31,7 +34,6 @@ func RunCommand(ctx *cli.Context) error {
 			mem = 100m;
 		}
 	*/
-
 	client, err := conn.GrpcClient_Single()
 	if err != nil {
 		return fmt.Errorf("\nclient创建失败 : %v", err)
@@ -59,7 +61,7 @@ func PsCommand() error {
 		return fmt.Errorf("\nclient创建失败 : %v", err)
 	}
 	//ps远程调用
-	containerinfo, err := client.PsContainer(context.Background(), nil)
+	containerinfo, err := client.PsContainer(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		fmt.Println("ps container err = ", err)
 		return err
