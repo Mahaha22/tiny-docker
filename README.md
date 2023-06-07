@@ -82,8 +82,8 @@ rtt min/avg/max/mdev = 0.081/0.081/0.081/0.000 ms
 
 **实现访问外网**  
 原理是iptables中nat表中SNAT功能，SNAT 可以在出站数据包经过网络设备时修改其源IP地址，使其看起来像来自于网络设备的另一个IP地址。这对于将内部私有 IP地址转换为公共IP地址非常有用，以便与外部网络通信。  
-`iptables -t nat -A POSTROUTING -s <源 IP 地址范围> -j SNAT --to-source <目标 IP 地址>`  
-如果我们不能确定需要转换的公网地址可以简单一点让iptables动态的去检测
+格式:`iptables -t nat -A POSTROUTING -s <源 IP 地址范围> -j SNAT --to-source <目标 IP 地址>`  
+如果我们不能确定需要转换的公网地址可以简单一点让iptables动态的去检测网关IP地址  
 `iptables -t nat -A POSTROUTING -s <源IP地址> -j MASQUERADE`  
 
 ```shell
