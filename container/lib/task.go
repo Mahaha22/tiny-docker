@@ -56,7 +56,6 @@ func main() {
 		cmd.Stderr = os.Stderr
 		cmd.SysProcAttr = &syscall.SysProcAttr{
 			Cloneflags: syscall.CLONE_NEWUTS |
-				syscall.CLONE_NEWNET |
 				syscall.CLONE_NEWIPC |
 				syscall.CLONE_NEWUSER |
 				syscall.CLONE_NEWNS |
@@ -68,6 +67,9 @@ func main() {
 				{ContainerID: 0, HostID: 0, Size: 1},
 			},
 			Unshareflags: syscall.CLONE_NEWNS,
+		}
+		if os.Args[3] != "host" { //如是果非host模式
+			cmd.SysProcAttr.Cloneflags |= syscall.CLONE_NEWNET
 		}
 		if err := cmd.Start(); err != nil {
 			return
