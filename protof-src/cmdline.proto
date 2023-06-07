@@ -24,6 +24,8 @@ message flag{
   string name = 4;
   string image_id = 5;
   repeated string volmnt = 6; //挂载卷映射
+  string net = 7;//指定容器网络
+  repeated string ports = 8;//端口映射
 }
 
 //定义request model
