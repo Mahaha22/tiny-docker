@@ -20,9 +20,17 @@ var run = cli.Command{
 			Name:  "v",
 			Usage: `mount volume -- vol1 : vol2`,
 		},
-		cli.StringFlag{
+		cli.StringFlag{ //指定容器镜像
 			Name:  "i",
 			Usage: `containe image's id`,
+		},
+		cli.StringFlag{ //指定网络
+			Name:  "net",
+			Usage: `set container name`,
+		},
+		cli.StringSliceFlag{
+			Name:  "p",
+			Usage: `HostPort:ContainerPort`,
 		},
 		cli.StringFlag{ //容器名
 			Name:  "name",
@@ -60,7 +68,7 @@ var ps = cli.Command{
 		//发送ps指令
 		err := cmd.PsCommand()
 		if err != nil {
-			return fmt.Errorf("\nrun 容器启动失败: %v", err)
+			return fmt.Errorf("查询失败%v", err)
 		}
 		return err
 	},
@@ -83,7 +91,7 @@ var exec = cli.Command{
 	Action: func(context *cli.Context) error {
 		//判断启动一个容器需要的最少参数
 		if len(context.Args()) < 2 {
-			return fmt.Errorf("Missing container command %v", len(context.Args()))
+			return fmt.Errorf("missing container command %v", len(context.Args()))
 		}
 		//rpc调用
 		err := cmd.ExecCommand(context)
