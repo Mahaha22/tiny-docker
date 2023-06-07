@@ -53,9 +53,9 @@ $ ip addr add 192.168.0.1/16 brd + dev br0
 $ ip link set br0 up
 $ ip netns exec n1 ip addr add 192.168.0.2/16 dev veth1_c
 $ #给放入命名空间n1、n2的网卡设置ip地址，并启动up
-$ ip netns exec n1 ip addr add 192.168.0.2/16 dev veth1_c
+$ ip netns exec n1 ip addr add 192.168.0.2/16 brd + dev veth1_c
 $ ip netns exec n1 ip link set veth1_c up
-$ ip netns exec n2 ip addr add 192.168.0.3/16 dev veth2_c
+$ ip netns exec n2 ip addr add 192.168.0.3/16 brd + dev veth2_c
 $ ip netns exec n2 ip link set veth2_c up
 $ #启动虚拟网卡的另一端
 $ ip link set veth1_br up
@@ -80,10 +80,36 @@ rtt min/avg/max/mdev = 0.081/0.081/0.081/0.000 ms
 > 注意，此时n1、n2网络命名空间是不可以上外网，外网也无法访问n1、n2;  
 > 需要访问外网和提供服务需要配置路由表和iptables流量转发  
 
+**实现访问外网**  
+原理是iptables中nat表中SNAT功能，SNAT 可以在出站数据包经过网络设备时修改其源IP地址，使其看起来像来自于网络设备的另一个IP地址。这对于将内部私有 IP地址转换为公共IP地址非常有用，以便与外部网络通信。  
+`iptables -t nat -A POSTROUTING -s <源 IP 地址范围> -j SNAT --to-source <目标 IP 地址>`  
+如果我们不能确定需要转换的公网地址可以简单一点让iptables动态的去检测
+`iptables -t nat -A POSTROUTING -s <源IP地址> -j MASQUERADE`  
 
+```shell
+$ #进入网络命名空间内部设置默认网关
+$ ip netns exec n1 ip route add default via 192.168.0.1 dev veth1_c
+$ ip netns exec n2 ip route add default via 192.168.0.1 dev veth2_c
+$ ip netns exec n1 route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.0.1     0.0.0.0         UG    0      0        0 veth1_c
+192.168.0.0     0.0.0.0         255.255.0.0     U     0      0        0 veth1_c
 
-
-
+$ #现在在n1、n2网络中是无法访问www.baidu.com
+$ #需要设置SNAT转发
+$ iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -j MASQUERADE
+$ ip netns exec n1 ping www.baidu.com
+PING www.a.shifen.com (180.101.50.188) 56(84) bytes of data.
+64 bytes from 180.101.50.188 (180.101.50.188): icmp_seq=1 ttl=49 time=9.60 ms
+64 bytes from 180.101.50.188 (180.101.50.188): icmp_seq=2 ttl=49 time=9.57 ms
+64 bytes from 180.101.50.188 (180.101.50.188): icmp_seq=3 ttl=49 time=9.62 ms
+^C
+--- www.a.shifen.com ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 5ms
+rtt min/avg/max/mdev = 9.566/9.593/9.616/0.020 ms
+```
+> 注意，当新启动一个容器镜像的时候虽然所有的网络配置都正确，但是也不一定可以访问www.baidu.com,这是因为容器内部的域名解析配置不正确，如果出现这种情况请检查容器的/etc/resolve.conf。最简单的做法是直接复制主机的/etc/resolve.conf
 
 
 
