@@ -13,7 +13,7 @@ func CreateDirectoryIfNotExists(path string) error {
 		}
 		fmt.Printf("Created directory: %s\n", path)
 	} else {
-		//fmt.Printf("Directory already exists: %s\n", path)
+		//fmt.Printf("Directory already exists: %s \n", path)
 		return err
 	}
 	return nil
