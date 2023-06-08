@@ -8,6 +8,7 @@ import (
 
 func init() {
 	Global_Network = make(map[string]*Network)
+	HostPortTable = make(map[string]bool)
 	//初始化一个默认网络
 	_, subnet, _ := net.ParseCIDR("192.168.0.0/20")
 	nw := &Network{
@@ -26,6 +27,8 @@ func init() {
 }
 
 var Global_Network map[string]*Network //保存全局的网络信息
+var HostPortTable map[string]bool      //保存主机端口的使用情况
+
 func RemoveAllNetwork() {
 	for name, nw := range Global_Network {
 		err := nw.RemoveNetwork()
@@ -36,11 +39,11 @@ func RemoveAllNetwork() {
 }
 
 type Network struct { //单个新创建的网络信息包含网络名、子网划分、网络驱动
-	Name    string            `json:"name"`    //网络名
-	Subnet  *net.IPNet        `json:"subnet"`  //子网
-	Ipalloc *IPAlloc          `json:"ipalloc"` //网络划分
-	Driver  Driver            `json:"driver"`  //网络驱动
-	Port    map[string]string `json:"port"`    //port映射
+	Name    string     `json:"name"`    //网络名
+	Subnet  *net.IPNet `json:"subnet"`  //子网
+	Ipalloc *IPAlloc   `json:"ipalloc"` //网络划分
+	Driver  Driver     `json:"driver"`  //网络驱动
+	//Port    map[string]string `json:"port"`    //port映射
 }
 
 func (n *Network) CreateNetwork() error {
@@ -59,11 +62,11 @@ func (n *Network) RemoveNetwork() error {
 	return nil
 }
 
-func ApplyNetwork(pid int, nw *Network) (net.IP, error) {
+func ApplyNetwork(pid int, nw *Network, ports map[string]string) (net.IP, error) {
 	switch nw.Driver.(type) {
 	case *BridgeDriver:
 		{
-			ip, err := SetBridgeNetwork(pid, nw)
+			ip, err := SetBridgeNetwork(pid, nw, ports)
 			return ip, err
 		}
 	case *HostDriver:
