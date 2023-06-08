@@ -76,6 +76,7 @@ func (b *BridgeDriver) Remove() error {
 		return err
 	}
 	//3.清理iptables
+	fmt.Println(b.Iptables)
 	cmd = exec.Command("/bin/bash", "-c", b.Iptables)
 	if err := cmd.Run(); err != nil {
 		return err
@@ -83,7 +84,7 @@ func (b *BridgeDriver) Remove() error {
 	return nil
 }
 
-func SetBridgeNetwork(pid int, nw *Network) (net.IP, error) {
+func SetBridgeNetwork(pid int, nw *Network, ports map[string]string) (net.IP, error) {
 	//1.创建虚拟网卡对
 	ip, ok := nw.Ipalloc.Allocate() //容器的ip地址
 	if !ok {
@@ -150,7 +151,27 @@ func SetBridgeNetwork(pid int, nw *Network) (net.IP, error) {
 		return nil, err
 	}
 	//8.设置iptables nat表POSTROUTING
-
+	//一般来说这一步在驱动创建的时候就已经完成
 	//9.设置iptables nat表PREROUTING
+	//举例 iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination 192.168.0.2:80
+	for HostPort, ContainerPort := range ports {
+		//判断主机端口是否被占用
+		err := utils.IsPortAvilable(HostPort)
+		if err != nil {
+			HostPortTable[HostPort] = true
+			return nil, fmt.Errorf("port %v is in use", HostPort)
+		}
+		_, ok := HostPortTable[HostPort]
+		if ok {
+			return nil, fmt.Errorf("port %v is in use", HostPort)
+		}
+		args = fmt.Sprintf("iptables -t nat -A PREROUTING -p tcp -m tcp --dport %v -j DNAT --to-destination %v:%v", HostPort, ip, ContainerPort)
+		fmt.Println(args)
+		cmd = exec.Command("/bin/bash", "-c", args)
+		if err := cmd.Run(); err != nil {
+			fmt.Println("6 err = ", err)
+			return nil, err
+		}
+	}
 	return ip, nil
 }
