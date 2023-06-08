@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -12,10 +13,24 @@ import (
 	"tiny-docker/network"
 	"tiny-docker/server/service"
 	TermSvc "tiny-docker/server/service/term"
+	"tiny-docker/utils"
 
 	"google.golang.org/grpc"
 )
 
+func init() {
+	//创建服务启动需要的路径
+	var filedir []string
+	filedir = append(filedir, "/sys/fs/cgroup/cpu/tiny-docker")    //cpu subsystem
+	filedir = append(filedir, "/sys/fs/cgroup/memory/tiny-docker") //mem subsystem
+	filedir = append(filedir, "/mnt/tiny-docker/")                 //容器目录保存路径
+	for _, v := range filedir {
+		if err := utils.CreateDirectoryIfNotExists(v); err != nil {
+			fmt.Println("路径初始化失败,tiny-docker退出")
+			os.Exit(0)
+		}
+	}
+}
 func main() {
 	//1.前置处理
 	//注册一些信号，可以让程序优雅的停止
@@ -46,5 +61,4 @@ func main() {
 	if err != nil {
 		log.Fatal("Server fail :", err)
 	}
-
 }
