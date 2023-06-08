@@ -31,7 +31,7 @@ func child() {
 	}
 	//cmd := exec.Command("/bin/sh", "-c", "/bin/sleep 3000") //模拟容器中启动一个服务
 	cmd := exec.Command("/bin/sh", "-c", os.Args[2])
-	cmd.Env = append(cmd.Env, ":/bin") //添加环境变量
+	//cmd.Env = append(cmd.Env, ":/bin") //添加环境变量
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
