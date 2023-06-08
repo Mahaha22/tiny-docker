@@ -43,6 +43,10 @@ func (r *ContainerService) PsContainer(context.Context, *emptypb.Empty) (*cmdlin
 		for vol1, vol2 := range c.Volmnt {
 			tmp.VolumeMount = append(tmp.VolumeMount, vol1, vol2)
 		}
+		for hostPort, containerPort := range c.Net.Port {
+			tmp.Ports = append(tmp.Ports, hostPort)
+			tmp.Ports = append(tmp.Ports, containerPort)
+		}
 		info.Containers = append(info.Containers, tmp)
 	}
 	return info, nil
