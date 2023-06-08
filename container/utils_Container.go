@@ -5,9 +5,11 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 	"tiny-docker/cgroup"
+	"tiny-docker/network"
 	"tiny-docker/overlayfs"
 )
 
@@ -62,6 +64,7 @@ func KillContainer(c *Container) {
 	c.Remove()
 	delete(Global_ContainerMap, c.ContainerId)
 	cgroup.DestroyCgroup(c.ContainerId)
+	ReleaseNetWork(c)
 }
 
 func KillallVolume() {
@@ -78,5 +81,24 @@ func KillVolume(c *Container) {
 	// 1.2卸载容器根文件系统
 	if err := overlayfs.DeleteOverlayMnt(c.ContainerId); err != nil {
 		fmt.Println("DeleteOverlayMnt err = ", err)
+	}
+}
+
+func ReleaseNetWork(c *Container) {
+	//释放占用的ip
+	if c.Net.Ip != nil {
+		c.Net.Network_Membership.Ipalloc.Realese(c.Net.Ip)
+	}
+	//释放端口映射
+	if c.Net.Port != nil {
+		for HostPort, ContainerPort := range c.Net.Port {
+			delete(network.HostPortTable, HostPort)
+			args := fmt.Sprintf("iptables -t nat -D PREROUTING -p tcp -m tcp --dport %v -j DNAT --to-destination %v:%v", HostPort, c.Net.Ip, ContainerPort)
+			fmt.Println(args)
+			cmd := exec.Command("/bin/bash", "-c", args)
+			if err := cmd.Run(); err != nil {
+				fmt.Println("6 err = ", err)
+			}
+		}
 	}
 }
