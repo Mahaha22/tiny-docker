@@ -24,7 +24,7 @@ func newTerm(containerId string) error {
 		//log.Fatal("newTerm stream error : ", err)
 	}
 	//接收服务器的信息
-	go recv(stream)
+	go recv(stream, containerId)
 	//首先把需要开启交互的容器的id传过去建立交互连接
 	if err := stream.Send(&term.Request{Input: containerId}); err != nil {
 		return err
@@ -32,7 +32,7 @@ func newTerm(containerId string) error {
 	}
 	//从终端读取用户输入，并将其发送到Shell服务中执行
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Print("\033[32m[tiny-docker]# \033[0m") //此处将会显示为绿色
+	fmt.Printf("\033[32m[%s]# \033[0m", containerId) //此处将会显示为绿色
 	for {
 		if !scanner.Scan() {
 			break
@@ -50,16 +50,17 @@ func newTerm(containerId string) error {
 	return nil
 }
 
-func recv(stream term.Term_NewtermClient) {
+func recv(stream term.Term_NewtermClient, hostname string) {
 	for {
 		out, err := stream.Recv()
 		if err == io.EOF {
-			break
+			fmt.Println("容器已退出")
+			os.Exit(0)
 		}
 		if err != nil {
 			log.Fatalf("failed to receive: %v", err)
 		}
 		fmt.Print(out.GetOutput())
-		fmt.Print("\033[32m[tiny-docker]# \033[0m")
+		fmt.Printf("\033[32m[%s]# \033[0m", hostname)
 	}
 }
