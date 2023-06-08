@@ -36,7 +36,8 @@ const (
 )
 
 type ContainerNet struct {
-	Ip                 net.IP           //容器的ip
+	Ip                 net.IP //容器的ip
+	Port               map[string]string
 	Network_Membership *network.Network //容器所属网络
 }
 
@@ -53,7 +54,6 @@ type Container struct {
 	Image        string               //容器镜像
 	Command      string               //启动命令
 	Net          ContainerNet         //容器网络
-	//Ports
 }
 
 // 实例化一个容器
@@ -105,9 +105,10 @@ func CreateContainer(req *cmdline.Request) (*Container, error) {
 		c.Net.Network_Membership = nw
 	}
 	if req.Args.Ports != nil { //如果指定了端口映射
+		c.Net.Port = make(map[string]string)
 		for _, item := range req.Args.Ports { //[80:8080 1234:90]
 			p := strings.Split(item, ":")
-			c.Net.Network_Membership.Port[p[0]] = p[1] //[80->8080],[1234->90]
+			c.Net.Port[p[0]] = p[1] //[80->8080],[1234->90]
 		}
 	}
 	//c.Command += "\n"
@@ -117,17 +118,19 @@ func CreateContainer(req *cmdline.Request) (*Container, error) {
 // 容器相关配置初始化，例如namesapce和cgroup
 func (c *Container) Init() error {
 	//1.加载容器镜像挂载overlay存储
-	image_path := "/root/busybox"
+	image_path := c.Image
 	err := overlayfs.MountOverlay(image_path, c.ContainerId)
 	if err != nil {
 		fmt.Println("overlayfs mount err = ", err)
 		return err
 	}
 	//2.挂载容器卷
-	err = overlayfs.MountFS(c.Volmnt, c.ContainerId)
-	if err != nil {
-		fmt.Println("volume mount err = ", err)
-		return err
+	if c.Volmnt != nil {
+		err = overlayfs.MountFS(c.Volmnt, c.ContainerId)
+		if err != nil {
+			fmt.Println("volume mount err = ", err)
+			return err
+		}
 	}
 
 	//3.从挂载好的overlay存储中启动容器
@@ -155,11 +158,17 @@ func (c *Container) Init() error {
 	//4.创建cgroup资源
 	//容器内的第一个程序已经启动，针对这个容器以他的唯一标识container_id在/sys/fs/cgroup/<subsystem>/tiny-docker/<container_id>创建新的subsystem
 	if err := cgroup.SetCgroup(c.ContainerId, &c.CgroupRes, c.RealPid); err != nil {
+		KillContainer(c)
 		return fmt.Errorf("cgroup资源配置出错 :%v", err)
 	}
 
 	//5.配置网络资源
-	c.Net.Ip, err = network.ApplyNetwork(c.RealPid, c.Net.Network_Membership)
+	c.Net.Ip, err = network.ApplyNetwork(c.RealPid, c.Net.Network_Membership, c.Net.Port)
+	if err != nil {
+		KillContainer(c)
+		return fmt.Errorf("网络配置出错 :%v", err)
+		//清除网络配置
+	}
 	//cmd.Wait()
 	return nil
 }
