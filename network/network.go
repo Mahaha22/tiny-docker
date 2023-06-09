@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 )
 
 func init() {
 	Global_Network = make(map[string]*Network)
 	HostPortTable = make(map[string]bool)
+	//首先清理网桥残余，如果有就清理，没有就什么都不错
+	args := "ip link delete Tiny-docker"
+	cmd := exec.Command("/bin/bash", "-c", args)
+	cmd.Run()
 	//初始化一个默认网络
 	_, subnet, _ := net.ParseCIDR("192.168.0.0/20")
 	nw := &Network{
