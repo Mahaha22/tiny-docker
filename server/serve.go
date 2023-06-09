@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	//创建服务启动需要的路径
+	//1.创建服务启动需要的路径
 	var filedir []string
 	filedir = append(filedir, "/sys/fs/cgroup/cpu/tiny-docker")    //cpu subsystem
 	filedir = append(filedir, "/sys/fs/cgroup/memory/tiny-docker") //mem subsystem
@@ -30,6 +30,9 @@ func init() {
 			os.Exit(0)
 		}
 	}
+
+	//2.清理一些环境残留
+	utils.Cleantrash()
 }
 func main() {
 	//1.前置处理
