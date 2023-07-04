@@ -152,7 +152,9 @@ type Container struct {
 func (c *Container) Init() error {
 	//1.加载容器镜像挂载overlay存储
   /* 
-  也就是说通过overlay的挂载方式，将容器镜像放到一个目录下(/mnt/tiny-docker/<container-id>),我们改变容器进程的根目录为/mnt/tiny-docker/<container-id>,让在容器中的所有进程都以为自己在一个全新的文件系统中，并且对文件的修改不会影响到宿主机，从而实现文件系统的隔离
+  也就是说通过overlay的挂载方式，将容器镜像放到一个目录下(/mnt/tiny-docker/<container-id>),我们改变容器进
+  程的根目录为/mnt/tiny-docker/<container-id>,让在容器中的所有进程都以为自己在一个全新的文件系统中，并且对
+  文件的修改不会影响到宿主机，从而实现文件系统的隔离
   */
 	image_path := c.Image
 	err := overlayfs.MountOverlay(image_path, c.ContainerId)
@@ -181,7 +183,10 @@ func (c *Container) Init() error {
 		netflag = "host"
 	}
   /*
-    ./task是一个容器启动的钩子程序，之所以需要借助一个额外的程序是因为我们要先创建一个全新的命名空间(Mount、UTS、IPC、PID、Network、User)实现与宿主机的完全隔离，如果我们在本程序中创建新的namespace那么本程序就会进入这个新的namespace，无法实现容器与宿主机隔离。所以我们借助一个钩子程序去创建一个新的namespace，然后钩子程序再启动容器。这样就实现完美隔离了。
+    ./task是一个容器启动的钩子程序，之所以需要借助一个额外的程序是因为我们要先创建一个全新的命名空间(Mount、UTS、IPC、PID、Network、User)
+    实现与宿主机的完全隔离，如果我们在本程序中创建新的namespace那么本程序就会进入这个新的namespace，
+    无法实现容器与宿主机隔离。所以我们借助一个钩子程序去创建一个新的namespace，然后钩子程序再启动容器。
+    这样就实现完美隔离了。
   */
 	cmd := exec.Command("./task", c.ContainerId, c.Command, netflag) //启动容器的钩子+容器名+第一条启动命令
 	r, w, _ := os.Pipe()                                             //用于跟这个钩子程序通信
@@ -203,7 +208,8 @@ func (c *Container) Init() error {
 	//4.创建cgroup资源
 	//容器内的第一个程序已经启动，针对这个容器以他的唯一标识container_id在/sys/fs/cgroup/<subsystem>/tiny-docker/<container_id>创建新的subsystem
   /*
-    创建cgroup子系统，并根据容器的cpu和mem配置修改子系统中的配置文件，并将容器的pid加入到对应资源子系统的task中，容器的运行就会受到资源的限制。
+    创建cgroup子系统，并根据容器的cpu和mem配置修改子系统中的配置文件，
+    并将容器的pid加入到对应资源子系统的task中，容器的运行就会受到资源的限制。
   */
 	if err := cgroup.SetCgroup(c.ContainerId, &c.CgroupRes, c.RealPid); err != nil {
 		KillContainer(c)
