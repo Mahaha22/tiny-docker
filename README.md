@@ -26,6 +26,8 @@
 # 核心功能实现
 ## 一、容器 
 ### 1、启动容器 <a id="启动容器"></a>
+> 首先先启动一个容器看看效果
+
 ```shell
 $ ./tinyd run --help
 
@@ -62,7 +64,8 @@ $ ./tinyd ps
 CONTAINER ID    IMAGE      COMMAND         CREATED         STATUS     PORTS      VOLUME               NAMES
 68d19c54        /root/redis /bin/sleep 3000  14:49           RUNNING    8080:80;     -                  c1
 ```
-可以看到容器已经成功运行,接下来我们看创建一个容器发生了什么
+> 可以看到容器已经成功运行,接下来我们看创建一个容器发生了什么
+
 1. ./client/cli_command.go文件中定一个执行命令行tinyd run所接收的字段
 ```go
 // 用于启动一个容器
@@ -121,7 +124,109 @@ func (r *ContainerService) RunContainer(ctx context.Context, req *cmdline.Reques
 	}, nil
 }
 ```
-4. RunContainer()调用container.CreateContainer(req)去真正的创建一个容器，创建细节读者可以去文件中查看
+4. RunContainer()调用container.CreateContainer(req)去创建一个容器的数据结构也就是实例化一个容器
+```go
+// 容器的数据结构
+type Container struct {
+	ContainerId  string               //容器的唯一标识
+	Name         string               //容器的自定义名称
+	CgroupRes    conf.Cgroupflag      //cgroup资源
+	NameSpaceRes *syscall.SysProcAttr //Namespace隔离标准当作克隆标志
+	RealPid      int                  //容器在主机上真实的进程id
+	Volmnt       map[string]string    //挂载卷映射 [host]->container
+	CreateTime   string               //创建时间
+	Status       state                //容器的运行状态
+	Image        string               //容器镜像
+	Command      string               //启动命令
+	Net          ContainerNet         //容器网络
+}
+```
+对于以上字段的所有配置都在CreateContainer()中完成，回到RunContainer()拿到一个newContainer,newContainer调用自身的Init()方法完成容器的启动，容器在启动的过程中会读取容器配置的的数据。完成启动以后返回客户端一个容器的ID号作为容器的标识。  
+
+以上就是创建一个容器所进行的流程，关于具体的容器启动过程中如何配置，下面阐述。  
+
+> 让深入容器启动时,是如何配置的？我通过代码注释的方式详细解释
+
+```go
+// 容器相关配置初始化，例如namesapce和cgroup
+func (c *Container) Init() error {
+	//1.加载容器镜像挂载overlay存储
+  /* 
+  也就是说通过overlay的挂载方式，将容器镜像放到一个目录下(/mnt/tiny-docker/<container-id>),我们改变容器进程的根目录为/mnt/tiny-docker/<container-id>,让在容器中的所有进程都以为自己在一个全新的文件系统中，并且对文件的修改不会影响到宿主机，从而实现文件系统的隔离
+  */
+	image_path := c.Image
+	err := overlayfs.MountOverlay(image_path, c.ContainerId)
+	if err != nil {
+		fmt.Println("overlayfs mount err = ", err)
+		return err
+	}
+	//2.挂载容器卷
+  /* 
+      这个用于实现容器卷的挂载vol1:vol2,将宿主机的文件vol1挂载到容器文件系统的vol2
+  */
+	if c.Volmnt != nil {
+		err = overlayfs.MountFS(c.Volmnt, c.ContainerId)
+		if err != nil {
+			fmt.Println("volume mount err = ", err)
+			return err
+		}
+	}
+
+	//3.从挂载好的overlay存储中启动容器
+	os.Chdir("/root/go/tiny-docker/container/lib") //钩子程序的位置
+	//如果容器指定的网络是host，那么就没有必要隔离网络命名空间,这里给容器启动钩子传递一个标记
+	var netflag string
+	if _, ok := c.Net.Network_Membership.Driver.(*network.HostDriver); ok {
+		//如果是host驱动
+		netflag = "host"
+	}
+  /*
+    ./task是一个容器启动的钩子程序，之所以需要借助一个额外的程序是因为我们要先创建一个全新的命名空间(Mount、UTS、IPC、PID、Network、User)实现与宿主机的完全隔离，如果我们在本程序中创建新的namespace那么本程序就会进入这个新的namespace，无法实现容器与宿主机隔离。所以我们借助一个钩子程序去创建一个新的namespace，然后钩子程序再启动容器。这样就实现完美隔离了。
+  */
+	cmd := exec.Command("./task", c.ContainerId, c.Command, netflag) //启动容器的钩子+容器名+第一条启动命令
+	r, w, _ := os.Pipe()                                             //用于跟这个钩子程序通信
+	cmd.ExtraFiles = []*os.File{w}                                   //将管道的一端传递给钩子
+	if err := cmd.Start(); err != nil {
+		fmt.Println("cmd err = ", err)
+		return err
+	}
+
+  /*
+    钩子程序启动了容器进程，获取这个进程号，并通过管道将这个pid传递给主程序用于主程序对容器的管理
+  */
+	buf := make([]byte, 1024)
+	n, _ := r.Read(buf)
+	r.Close()
+	pid, _ := strconv.Atoi(string(buf[:n-1])) //钩子程序用于容器的启动，并从管道的另一端返回容器启动的真实pid
+	c.RealPid = pid
+
+	//4.创建cgroup资源
+	//容器内的第一个程序已经启动，针对这个容器以他的唯一标识container_id在/sys/fs/cgroup/<subsystem>/tiny-docker/<container_id>创建新的subsystem
+  /*
+    创建cgroup子系统，并根据容器的cpu和mem配置修改子系统中的配置文件，并将容器的pid加入到对应资源子系统的task中，容器的运行就会受到资源的限制。
+  */
+	if err := cgroup.SetCgroup(c.ContainerId, &c.CgroupRes, c.RealPid); err != nil {
+		KillContainer(c)
+		return fmt.Errorf("cgroup资源配置出错 :%v", err)
+	}
+
+	//5.配置网络资源
+  /*
+    很简单，获得一个具体的IP地址。细节在网络实现的部分会细讲
+  */
+	c.Net.Ip, err = network.ApplyNetwork(c.RealPid, c.Net.Network_Membership, c.Net.Port)
+	if err != nil {
+		KillContainer(c)
+		return fmt.Errorf("网络配置出错 :%v", err)
+		//清除网络配置
+	}
+	//cmd.Wait()
+	return nil
+}
+```
+基于以上大体流程，我们就完完全全启动了一个命名空间隔离、资源隔离、文件系统隔离的容器。大体流程如此，关于其中具体的实现细节，下面还会解释。
+
+
 ### 1、网络配置基本原理 
 <a id="网络配置基本原理"></a>
 ### bridge网络
