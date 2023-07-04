@@ -2,22 +2,13 @@
    Tiny Docker是一个使用Golang语言实现的精简版Docker项目，旨在模仿runC实现容器管理的基本功能。该项目采用了CS架构，客户端和服务器使用GRPC框架进行交互。可以实现高效的容器远程管理。  
    ![结构图](./assets/tiny-docker.png)
 
-# 核心功能实现简要讲解
+# 核心功能目录
 ## 一、容器
 - [启动容器](#启动容器) 
-    - [xxx](#xxx)
-    - [xxx](#xxx)
 - [进入容器](#进入容器) 
-    - [xxx](#xxx)
-    - [xxx](#xxx)
 - [执行容器命令](#执行容器命令)
-    - [xxx](#xxx)
-    - [xxx](#xxx)
 - [查看运行中的容器](#查看运行中的容器)
-    - [xxx](#xxx)
-    - [xxx](#xxx)
 - [删除容器](#删除容器)
-    - [xxx](#xxx)
 ## 二、资源限制
 - [cpu资源限制](#cpu资源限制)
 - [memory资源限制](#mem资源限制)
@@ -32,7 +23,105 @@
   - [list](#nw_list)
   - [delete](#nw_delete)
 
-## 四、网络配置 
+# 核心功能实现
+## 一、容器 
+### 1、启动容器 <a id="启动容器"></a>
+```shell
+$ ./tinyd run --help
+
+NAME:
+   tinyd run - run a new container
+
+USAGE:
+   tinyd run [command options] [arguments...]
+
+OPTIONS:
+   --it          enable tty
+   -v value      mount volume -- vol1 : vol2
+   -i value      containe image's id
+   --net value   set container name
+   -p value      HostPort:ContainerPort
+   --name value  set container name
+   --cpu value   limit the use of cpu
+   --mem value   limit the use of mem
+```
+- --it   代表是否进入交互逻辑
+- --v    进行容器卷挂载
+- -i     指定容器镜像的id
+- --net  指定容器启动时需要加入的网络默认为Tiny-docker,Bridge类型
+- -p     端口映射
+- --name 设置容器的名字
+- --cpu  对容器使用cpu进行限制,范围为[10000,100000],最大为100000代表100%的cpu资源
+- --mem  对容器使用mem进行限制,如--mem 100m 表示使用100Mi内存
+
+```shell
+#启动一个容器
+$ ./tinyd run -i /root/redis --cpu 10000 --mem 500m --name c1 -p 8080:80 /bin/sleep 3000
+Create ContainerId 68d19c54 Sucessfully
+$ ./tinyd ps
+CONTAINER ID    IMAGE      COMMAND         CREATED         STATUS     PORTS      VOLUME               NAMES
+68d19c54        /root/redis /bin/sleep 3000  14:49           RUNNING    8080:80;     -                  c1
+```
+可以看到容器已经成功运行,接下来我们看创建一个容器发生了什么
+1. ./client/cli_command.go文件中定一个执行命令行tinyd run所接收的字段
+```go
+// 用于启动一个容器
+var run = cli.Command{
+	Name:  "run",
+	Usage: `run a new container`,
+	Flags: []cli.Flag{...},
+	Action: func(context *cli.Context) error {
+    ...
+		err := cmd.RunCommand(context)
+    ...
+	},
+}
+```
+2. run命令将全部接收的数据传递给cmd.RunCommand,RunCommand解析出所有的字段封装为一个请求并通过GRPC远程调用调用服务器的RunContainer()函数
+```go
+func RunCommand(ctx *cli.Context) error {
+	//解析出设定的配置
+	req := &cmdline.Request{
+		Args: &cmdline.Flag{
+			It:      ctx.Bool("it"),
+			ImageId: ctx.String("i"),
+			Net:     ctx.String("net"),
+			Name:    ctx.String("name"),
+			Cpu:     ctx.String("cpu"),
+			Mem:     ctx.String("mem"),
+			Volmnt:  ctx.StringSlice("v"),
+			Ports:   ctx.StringSlice("p"),
+		},
+		Cmd: ctx.Args(),
+	}
+	client, err := conn.GrpcClient_Single()
+	if err != nil {
+		return fmt.Errorf("\nclient创建失败 : %v", err)
+	}
+	response, err := client.RunContainer(context.Background(), req)
+  ...
+}
+```
+3. 服务器执行的RunContainer()在./server/service/containerSVC.go中
+```go
+func (r *ContainerService) RunContainer(ctx context.Context, req *cmdline.Request) (*cmdline.RunResponse, error) {
+	//实现具体的业务逻辑
+	newContainer, err := container.CreateContainer(req) //实例化一个容器
+	if err != nil {
+		return &cmdline.RunResponse{}, err //容器配置有误
+	}
+	if err := newContainer.Init(); err != nil { //初始化容器
+		return &cmdline.RunResponse{
+			ContainerId: "", //容器创建失败返回空
+		}, err
+	}
+	container.Global_ContainerMap[newContainer.ContainerId] = newContainer //放入Global_ContainerMap
+	return &cmdline.RunResponse{
+		ContainerId: newContainer.ContainerId, //容器创建成功返回真实的容器id
+	}, nil
+}
+```
+4. RunContainer()调用container.CreateContainer(req)去真正的创建一个容器，创建细节读者可以去文件中查看
 ### 1、网络配置基本原理 
 <a id="网络配置基本原理"></a>
 ### bridge网络
